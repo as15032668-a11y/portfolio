@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Y Wave Studio — Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#00ffff;
+    --accent-2:#3de1d8;
+    --card: rgba(20,24,28,0.52);
+    --glass-border: rgba(255,255,255,0.06);
+    --muted: #9aa;
+    --maxw: 1100px;
+  }
+  /* reset */
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family: 'Roboto', sans-serif;
+    color:#fff;
+    min-height:100vh;
+    overflow-x:hidden;
+    background:linear-gradient(180deg,#061018 0%, #08141a 40%, #04111a 100%);
+  }
+
+  /* canvas sits behind everything */
+  #bg-canvas{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    display:block; width:100%; height:100%;
+  }
+
+  /* subtle animated radial gradient overlay */
+  .bg-overlay{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(600px 400px at 10% 20%, rgba(0,200,200,0.03), transparent 8%),
+               radial-gradient(900px 500px at 85% 80%, rgba(0,180,255,0.02), transparent 12%);
+    mix-blend-mode:screen;
+  }
+
+  /* page shell */
+  nav{
+    position:sticky; top:12px; z-index:10; margin:12px auto 0; width:calc(100% - 32px); max-width:var(--maxw);
+    display:flex; justify-content:space-between; align-items:center; background:transparent;
+    padding:8px 14px;
+  }
+  nav h1{font-family:'Orbitron',sans-serif;color:var(--accent);letter-spacing:1.5px;font-size:1.05rem}
+  nav .links{display:flex; gap:14px; align-items:center}
+  nav a{color:rgba(255,255,255,0.85); text-decoration:none; font-weight:600; font-size:0.95rem}
+  nav a:hover{color:var(--accent-2)}
+
+  /* container */
+  .wrap{width:100%; max-width:var(--maxw); margin:28px auto; padding:20px; position:relative; z-index:2;}
+
+  /* hero */
+  .hero{
+    display:flex; gap:18px; align-items:center; justify-content:space-between;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+    border-radius:14px; padding:20px; margin-bottom:20px; border:1px solid var(--glass-border);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+  }
+  .hero-left{max-width:66%}
+  .hero h2{font-family:'Orbitron'; font-size:clamp(20px,2.6vw,30px); margin-bottom:6px; color:var(--accent)}
+  .hero p{color:var(--muted); margin-bottom:6px}
+  .cta{margin-top:8px}
+  .cta .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+  .cta .btn-primary{background:var(--accent); color:#000}
+  .cta .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--glass-border);margin-left:10px}
+
+  /* portfolio grid */
+  .portfolio{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    gap:20px;
+    align-items:stretch;
+  }
+  .card{
+    display:flex; flex-direction:column; justify-content:space-between;
+    border-radius:12px; overflow:hidden; background:var(--card); border:1px solid var(--glass-border);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+    transition: transform .28s ease, box-shadow .28s ease;
+  }
+  .card:hover{ transform:translateY(-6px); box-shadow: 0 18px 44px rgba(0,200,200,0.06); }
+  .media{aspect-ratio:16/9; background:#000; display:flex;align-items:center;justify-content:center; overflow:hidden}
+  .media img, .media video{ width:100%; height:100%; object-fit:cover; display:block; transition: transform .45s ease;}
+  .card:hover .media img, .card:hover .media video{ transform: scale(1.03); }
+
+  .meta{ padding:14px; color:var(--muted); display:flex; flex-direction:column; gap:8px; min-height:120px }
+  .meta .title{ color:#fff; font-weight:700; font-size:1.03rem }
+  .meta small{ color:var(--muted); font-size:0.9rem }
+
+  .controls{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  }
+  .left-controls{ display:flex; gap:10px; align-items:center }
+  .btn{
+    padding:10px 12px; border-radius:10px; border:none; cursor:pointer; font-weight:700; background:#111; color:#fff;
+    transition: transform .18s ease, background .18s ease;
+  }
+  .btn:hover{ transform:translateY(-2px) }
+  .btn-play{ background:var(--accent); color:#000; min-width:100px; }
+  .btn-play:hover{ background:var(--accent-2) }
+  .btn-view{ background:transparent; border:1px solid var(--glass-border); color:var(--muted); min-width:100px }
+
+  /* teaser open button */
+  .btn-open{ background:var(--accent); color:#000; padding:10px 16px; border-radius:10px }
+
+  /* modal */
+  .modal{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:30;
+    background:rgba(2,6,8,0.6); opacity:0; visibility:hidden; transition:opacity .25s ease, visibility .25s ease;
+    padding:20px;
+  }
+  .modal.open{ opacity:1; visibility:visible }
+  .modal-card{
+    width:100%; max-width:920px; background: linear-gradient(180deg, rgba(12,14,16,0.9), rgba(8,10,12,0.95));
+    border-radius:12px; padding:18px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 12px 50px rgba(0,0,0,0.7);
+  }
+  .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
+  .modal-header h4{ color:var(--accent); margin:0 }
+  .close{ background:#111; color:#fff; border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:8px; cursor:pointer; }
+
+  /* footer */
+  footer{ text-align:center; color:var(--muted); margin-top:28px; padding-bottom:36px; font-size:0.9rem; }
+
+  @media (max-width:820px){
+    .hero-left{max-width:100%}
+    .portfolio{ grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px }
+  }
+
+  /* reduce animation if user prefers reduced motion */
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important}
+    #bg-canvas{display:none}
+    .bg-overlay{background:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- canvas for particle background -->
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+<div class="bg-overlay" aria-hidden="true"></div>
+
+<nav>
+  <h1>Y WAVE STUDIO</h1>
+  <div class="links" aria-hidden="false">
+    <a href="#portfolio">Portfolio</a>
+    <a href="#contact">Contact</a>
+  </div>
+</nav>
+
+<main class="wrap" id="main">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-left">
+      <h2 id="hero-title">Crafting Cinematic Experiences</h2>
+      <p>Script → Voice → Video. Short teasers, highlight reels and full case studies — polished for clients.</p>
+      <div class="cta">
+        <button class="btn btn-primary" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Start a Project</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('portfolio').scrollIntoView({behavior:'smooth'})">View Portfolio</button>
+      </div>
+    </div>
+    <div class="hero-right" style="min-width:220px; text-align:right">
+      <small style="color:var(--muted)">Recent</small>
+      <div style="margin-top:10px; font-weight:700">New Highlight Reel</div>
+    </div>
+  </section>
+
+  <section id="portfolio" aria-labelledby="portfolio-title" style="margin-top:18px">
+    <h3 id="portfolio-title" style="color:var(--accent); margin-bottom:8px">Featured Work</h3>
+    <p style="color:var(--muted); margin-bottom:14px">Click Play to preview or View More to explore related work.</p>
+
+    <div class="portfolio" role="list">
+
+      <!-- TEASER (no View More) -->
+      <article class="card" role="listitem" aria-labelledby="t-title">
+        <div class="media">
+          <img src="thumbnail1.jpg" alt="Project Teaser">
+        </div>
+        <div class="meta">
+          <div>
+            <div class="title" id="t-title">Project Teaser</div>
+            <small>Thumbnail preview</small>
+          </div>
+        </div>
+        <div class="controls">
+          <div></div>
+          <div style="margin-left:auto">
+            <button class="btn-open" onclick="openModal('modal-teaser')">Open</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- SHORT TEASER -->
+      <article class="card" role="listitem" id="card-short">
+        <div class="media">
+          <video id="video-short" preload="metadata" poster="thumbnail-short.jpg">
+            <source src="short-teaser.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="meta">
+          <div>
+            <div class="title">Short Teaser Edit</div>
+            <small>00:30 — Teaser</small>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="left-controls">
+            <button class="btn btn-play" data-video="video-short" aria-pressed="false">▶ Play</button>
+            <div style="color:var(--muted); font-size:0.95rem">Preview</div>
+          </div>
+          <div>
+            <button class="btn btn-view" data-modal="modal-short">View More</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- FULL PROJECT -->
+      <article class="card" role="listitem" id="card-full">
+        <div class="media">
+          <video id="video-full" preload="metadata" poster="thumbnail-full.jpg">
+            <source src="full-project.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="meta">
+          <div>
+            <div class="title">Full-Length Showcase</div>
+            <small>Case study & breakdown</small>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="left-controls">
+            <button class="btn btn-play" data-video="video-full" aria-pressed="false">▶ Play</button>
+            <div style="color:var(--muted); font-size:0.95rem">Case study</div>
+          </div>
+          <div>
+            <button class="btn btn-view" data-modal="modal-full">View More</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- HIGHLIGHT REEL -->
+      <article class="card" role="listitem" id="card-high">
+        <div class="media">
+          <video id="video-high" preload="metadata" poster="thumbnail-high.jpg">
+            <source src="highlight-reel.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="meta">
+          <div>
+            <div class="title">Highlight Reel</div>
+            <small>Best moments compilation</small>
+          </div>
+        </div>
+        <div class="controls">
+          <div class="left-controls">
+            <button class="btn btn-play" data-video="video-high" aria-pressed="false">▶ Play</button>
+            <div style="color:var(--muted); font-size:0.95rem">Reel</div>
+          </div>
+          <div>
+            <button class="btn btn-view" data-modal="modal-high">View More</button>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- MODALS -->
+  <div id="modal-teaser" class="modal" role="dialog" aria-hidden="true">
+    <div class="modal-card" role="document" aria-labelledby="mteaser-title">
+      <div class="modal-header">
+        <h4 id="mteaser-title">Project Teaser</h4>
+        <button class="close" onclick="closeModal('modal-teaser')">Close</button>
+      </div>
+      <div class="modal-body" style="display:grid;gap:12px">
+        <img src="thumbnail1.jpg" alt="Project Teaser large" style="width:100%; border-radius:8px">
+        <p style="color:var(--muted)">Teaser image preview — replace with video if available.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-short" class="modal" role="dialog" aria-hidden="true">
+    <div class="modal-card" role="document" aria-labelledby="mshort-title">
+      <div class="modal-header">
+        <h4 id="mshort-title">Short Teaser — Related Work</h4>
+        <button class="close" onclick="closeModal('modal-short')">Close</button>
+      </div>
+      <div class="modal-body" style="display:grid;gap:12px">
+        <video controls src="short-teaser.mp4" style="width:100%; border-radius:8px"></video>
+        <p style="color:var(--muted)">Alternate cuts & BTS for the short teaser.</p>
+        <video controls src="extra-short-1.mp4" style="width:100%; border-radius:8px"></video>
+        <video controls src="extra-short-2.mp4" style="width:100%; border-radius:8px"></video>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-full" class="modal" role="dialog" aria-hidden="true">
+    <div class="modal-card" role="document" aria-labelledby="mfull-title">
+      <div class="modal-header">
+        <h4 id="mfull-title">Full-Length Showcase — Related Work</h4>
+        <button class="close" onclick="closeModal('modal-full')">Close</button>
+      </div>
+      <div class="modal-body" style="display:grid;gap:12px">
+        <video controls src="full-project.mp4" style="width:100%; border-radius:8px"></video>
+        <p style="color:var(--muted)">Breakdowns, extended scenes & client versions.</p>
+        <video controls src="extra-full-1.mp4" style="width:100%; border-radius:8px"></video>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-high" class="modal" role="dialog" aria-hidden="true">
+    <div class="modal-card" role="document" aria-labelledby="mhigh-title">
+      <div class="modal-header">
+        <h4 id="mhigh-title">Highlight Reel — Related Work</h4>
+        <button class="close" onclick="closeModal('modal-high')">Close</button>
+      </div>
+      <div class="modal-body" style="display:grid;gap:12px">
+        <video controls src="highlight-reel.mp4" style="width:100%; border-radius:8px"></video>
+        <p style="color:var(--muted)">More highlight compilations and alternate music edits.</p>
+        <video controls src="extra-high-1.mp4" style="width:100%; border-radius:8px"></video>
+      </div>
+    </div>
+  </div>
+
+  <!-- contact & footer -->
+  <section id="contact" style="margin-top:28px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent); border-radius:12px; padding:18px; border:1px solid var(--glass-border);">
+    <h3 style="color:var(--accent); margin-bottom:8px">Start Your Script-to-Video Project</h3>
+    <p style="color:var(--muted)">Share your script and VO and we'll transform them into finished visuals.</p>
+    <form onsubmit="event.preventDefault(); alert('Thanks — we will contact you.'); this.reset();" style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap">
+      <input name="name" required placeholder="Your name" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:#fff">
+      <input name="email" type="email" required placeholder="Email" style="flex:1; min-width:200px; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:#fff">
+      <textarea name="message" required placeholder="Project details" rows="3" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:transparent; color:#fff"></textarea>
+      <div style="width:100%; text-align:right">
+        <button type="submit" class="btn btn-play" style="background:var(--accent); color:#000; border-radius:10px;">Send Message</button>
+      </div>
+    </form>
+  </section>
+
+  <footer>&copy; <span id="year"></span> Y Wave Studio · Script → Voice → Video</footer>
+</main>
+
+<script>
+/* ---------- particle background on canvas ---------- */
+(function(){
+  const canvas = document.getElementById('bg-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let w = canvas.width = innerWidth;
+  let h = canvas.height = innerHeight;
+  const DPR = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width = innerWidth * DPR;
+  canvas.height = innerHeight * DPR;
+  canvas.style.width = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  ctx.scale(DPR, DPR);
+
+  const particles = [];
+  const COUNT = Math.round((w*h)/(1400*1400) * 120) + 30; // scale with screen
+  for(let i=0;i<COUNT;i++){
+    particles.push({
+      x: Math.random()*w,
+      y: Math.random()*h,
+      r: 0.6 + Math.random()*2.2,
+      vx: (Math.random()-0.5)*0.2,
+      vy: (Math.random()-0.5)*0.2,
+      alpha: 0.05 + Math.random()*0.25
+    });
+  }
+
+  function resize(){
+    w = canvas.width = innerWidth * DPR;
+    h = canvas.height = innerHeight * DPR;
+    canvas.style.width = innerWidth + 'px';
+    canvas.style.height = innerHeight + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  addEventListener('resize', ()=>{ resize(); });
+
+  let t = 0;
+  function loop(){
+    t += 0.007;
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+
+    // gentle radial vignette
+    const grd = ctx.createLinearGradient(0,0,0,innerHeight);
+    grd.addColorStop(0, 'rgba(10,18,22,0.16)');
+    grd.addColorStop(1, 'rgba(2,6,8,0.5)');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0,0,innerWidth,innerHeight);
+
+    // draw particles
+    for(let p of particles){
+      p.x += p.vx + Math.cos(t + p.x*0.0004)*0.08;
+      p.y += p.vy + Math.sin(t + p.y*0.0005)*0.08;
+      if(p.x < -20) p.x = innerWidth + 20;
+      if(p.x > innerWidth + 20) p.x = -20;
+      if(p.y < -20) p.y = innerHeight + 20;
+      if(p.y > innerHeight + 20) p.y = -20;
+
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(180,240,255,' + (p.alpha*0.9) + ')';
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  // respect reduced motion
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduced) loop();
+})();
+
+/* ---------- basic UI: year, play buttons, modals ---------- */
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Play/pause buttons (toggle + pause other videos)
+document.querySelectorAll('.btn-play').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const id = btn.dataset.video;
+    // If inline video with no data-video (submit/call to contact) ignore
+    if(!id) return;
+    const v = document.getElementById(id);
+    if(!v) return;
+    // pause others
+    document.querySelectorAll('.card video').forEach(o => { if(o !== v) o.pause(); });
+    if(v.paused){ v.play(); btn.textContent = '⏸ Pause'; btn.setAttribute('aria-pressed','true'); }
+    else { v.pause(); btn.textContent = '▶ Play'; btn.setAttribute('aria-pressed','false'); }
+    v.onended = ()=>{ btn.textContent = '▶ Play'; btn.setAttribute('aria-pressed','false'); };
+  });
+});
+
+// keep play button in sync with native controls
+document.querySelectorAll('.card video').forEach(v=>{
+  v.addEventListener('play', ()=> {
+    const btn = document.querySelector('.btn-play[data-video="'+v.id+'"]');
+    if(btn){ btn.textContent = '⏸ Pause'; btn.setAttribute('aria-pressed','true'); }
+  });
+  v.addEventListener('pause', ()=> {
+    const btn = document.querySelector('.btn-play[data-video="'+v.id+'"]');
+    if(btn){ btn.textContent = '▶ Play'; btn.setAttribute('aria-pressed','false'); }
+  });
+  v.addEventListener('ended', ()=> {
+    const btn = document.querySelector('.btn-play[data-video="'+v.id+'"]');
+    if(btn){ btn.textContent = '▶ Play'; btn.setAttribute('aria-pressed','false'); }
+  });
+});
+
+// Modal open/close - View More and teaser
+document.querySelectorAll('.btn-view, .btn-open').forEach(b=>{
+  b.addEventListener('click', ()=> {
+    const m = b.dataset.modal;
+    if(m) openModal(m);
+  });
+});
+
+function openModal(id){
+  const modal = document.getElementById(id);
+  if(!modal) return;
+  // pause all card videos
+  document.querySelectorAll('.card video').forEach(v => v.pause());
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+}
+
+function closeModal(id){
+  const modal = document.getElementById(id);
+  if(!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+  // pause videos inside modal when closed
+  modal.querySelectorAll('video').forEach(v => v.pause());
+}
+
+// clicking outside closes
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', (e) => {
+    if(e.target === m) closeModal(m.id);
+  });
+});
+
+// Esc closes any open modal
+window.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.modal.open').forEach(m => closeModal(m.id));
+  }
+});
+</script>
+</body>
+</html>
