@@ -112,18 +112,60 @@
     transform:translateX(-50%) translateY(0);
   }
 
+  /* Overlay enlarged player (plays inline on same page) */
+  #player-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 80;
+    background: rgba(0,0,0,0.85);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .22s ease, visibility .22s ease;
+    padding: 18px;
+  }
+  #player-overlay.open { opacity: 1; visibility: visible; }
+  #player-card {
+    width: 100%;
+    max-width: 1200px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+    transform: translateY(8px);
+    transition: transform .25s ease;
+  }
+  #player-overlay.open #player-card { transform: translateY(0); }
+  #player-card video {
+    display:block;
+    width:100%;
+    height: auto;
+    max-height: 84vh;
+    background: #000;
+  }
+  #player-controls {
+    display:flex;
+    gap:10px;
+    align-items:center;
+    padding:8px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    border-top: 1px solid rgba(255,255,255,0.03);
+  }
+  #player-close { margin-left:auto; }
   @media (max-width:820px){
     .hero-left{max-width:100%}
     .portfolio{ grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px }
     .contact-grid{ grid-template-columns:1fr; }
     .contact-aside{ border-left:none; padding-left:0; border-top:1px solid rgba(255,255,255,0.03); padding-top:10px }
+    #player-card { max-width: 100%; border-radius: 8px; }
   }
   @media (prefers-reduced-motion: reduce){
     *{transition:none!important}
     #bg-canvas{display:none}
     .bg-overlay{background:none}
   }
-  /* responsive video in modal */
   .modal-body video, .modal-body img{ width:100%; height:auto; max-height:70vh; display:block; border-radius:8px; background:#000 }
 </style>
 </head>
@@ -155,44 +197,44 @@
 
   <section id="portfolio" style="margin-top:18px">
     <h3 style="color:var(--accent); margin-bottom:8px">Featured Work</h3>
-    <p style="color:var(--muted); margin-bottom:14px">Click Play to preview or View More to explore related work.</p>
+    <p style="color:var(--muted); margin-bottom:14px">Click Play to preview (it will enlarge) or View More to explore related work.</p>
     <div class="portfolio">
 
       <!-- TEASER -->
       <article class="card">
         <div class="media">
-          <img id="thumb-teaser" alt="Project Teaser thumbnail">
+          <img id="thumb-teaser" alt="Project Teaser" src="">
         </div>
         <div class="meta"><div><div class="title">Project Teaser</div><small>Thumbnail preview</small></div></div>
         <div class="controls"><div></div><div style="margin-left:auto"><button class="btn-open" onclick="openModal('modal-teaser')">Open</button></div></div>
       </article>
 
       <!-- SHORT TEASER -->
-      <article class="card" id="card-short">
-        <div class="media"><video id="video-short" preload="metadata" poster="" playsinline muted><source></video></div>
+      <article class="card" id="card-short" tabindex="0">
+        <div class="media"><video id="video-short" preload="metadata" poster=""><source></video></div>
         <div class="meta"><div><div class="title">Short Teaser Edit</div><small>00:30 — Teaser</small></div></div>
         <div class="controls">
-          <div class="left-controls"><button class="btn btn-play" data-video="video-short">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Preview</div></div>
+          <div class="left-controls"><button class="btn btn-play" data-video="video-short" aria-controls="player-overlay">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Preview (enlarges)</div></div>
           <div><button class="btn btn-view" data-modal="modal-short">View More</button></div>
         </div>
       </article>
 
       <!-- FULL PROJECT -->
-      <article class="card" id="card-full">
-        <div class="media"><video id="video-full" preload="metadata" poster="" playsinline muted><source></video></div>
+      <article class="card" id="card-full" tabindex="0">
+        <div class="media"><video id="video-full" preload="metadata" poster=""><source></video></div>
         <div class="meta"><div><div class="title">Full-Length Showcase</div><small>Case study & breakdown</small></div></div>
         <div class="controls">
-          <div class="left-controls"><button class="btn btn-play" data-video="video-full">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Case study</div></div>
+          <div class="left-controls"><button class="btn btn-play" data-video="video-full" aria-controls="player-overlay">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Case study</div></div>
           <div><button class="btn btn-view" data-modal="modal-full">View More</button></div>
         </div>
       </article>
 
       <!-- HIGHLIGHT REEL -->
-      <article class="card" id="card-high">
-        <div class="media"><video id="video-high" preload="metadata" poster="" playsinline muted><source></video></div>
+      <article class="card" id="card-high" tabindex="0">
+        <div class="media"><video id="video-high" preload="metadata" poster=""><source></video></div>
         <div class="meta"><div><div class="title">Highlight Reel</div><small>Best moments compilation</small></div></div>
         <div class="controls">
-          <div class="left-controls"><button class="btn btn-play" data-video="video-high">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Reel</div></div>
+          <div class="left-controls"><button class="btn btn-play" data-video="video-high" aria-controls="player-overlay">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Reel</div></div>
           <div><button class="btn btn-view" data-modal="modal-high">View More</button></div>
         </div>
       </article>
@@ -271,7 +313,19 @@
     </div>
   </div>
 
-  <!-- Contact section -->
+  <!-- Player overlay: enlarged inline player (plays on same page) -->
+  <div id="player-overlay" aria-hidden="true" role="dialog" aria-label="Video player">
+    <div id="player-card">
+      <video id="player-overlay-video" controls playsinline></video>
+      <div id="player-controls">
+        <button id="player-pause-resume" class="btn">⏸ Pause</button>
+        <div id="player-time" style="color:var(--muted); font-weight:600">0:00 / 0:00</div>
+        <button id="player-close" class="btn close" style="margin-left:auto">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact -->
   <section id="contact" style="margin-top:22px">
     <h3>Contact</h3>
     <p>Tell us about your project — quick and casual is perfect. We'll follow up fast.</p>
@@ -312,272 +366,444 @@
   <footer>&copy; <span id="year"></span> Y Wave Studio · Script → Voice → Video</footer>
 </main>
 
-<!-- Toast element -->
+<!-- Toast -->
 <div id="toast" class="toast" aria-live="polite" aria-atomic="true">Opening Gmail…</div>
 
-<!-- Client logic: Firebase init, media loader, and call to the server function -->
-<script type="module">
-  // PRE-FILLED Cloud Function endpoint (replace if your function URL differs)
-  const CREATE_FOLDERS_URL = 'https://us-central1-portfolio-59b1d.cloudfunctions.net/api/createFolders';
-  const API_KEY = null; // set string if you configured an API key for the function, otherwise null
+<script>
+/* --------------------------
+   CONFIG / asset paths (set ASSET_BASE to your raw host)
+   -------------------------- */
+const ASSET_BASE = ''; // e.g. 'https://raw.githubusercontent.com/USERNAME/REPO/BRANCH/' or your static host
+const assetPaths = {
+  videos: {
+    short: 'videos/short-teaser.mp4',
+    short_bts: 'videos/short-bts.mp4',
+    full: 'videos/full-project.mp4',
+    full_breakdown: 'videos/full-breakdown.mp4',
+    high: 'videos/highlight-reel.mp4',
+    high_extra: 'videos/highlight-extra.mp4'
+  },
+  thumbs: {
+    teaser: 'thumbnails/teaser.jpg',
+    teaser_large: 'thumbnails/teaser-large.jpg',
+    short: 'thumbnails/short.jpg',
+    full: 'thumbnails/full.jpg',
+    high: 'thumbnails/high.jpg'
+  }
+};
 
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-  import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  // Corrected storageBucket: use <project-id>.appspot.com
-  const firebaseConfig = {
-    apiKey: "AIzaSyBij1R1g_GVBhrPfDCtheu9oA1I0AAznZM",
-    authDomain: "portfolio-59b1d.firebaseapp.com",
-    projectId: "portfolio-59b1d",
-    storageBucket: "portfolio-59b1d.appspot.com",
-    messagingSenderId: "887069551819",
-    appId: "1:887069551819:web:82904882b9129da4617f4e",
-    measurementId: "G-C4KF46BS81"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  try { getAnalytics(app); } catch(e){/* ignore analytics init errors */}
-
-  const storage = getStorage(app);
-  const auth = getAuth(app);
-
-  // UI helpers (toast)
+/* --------------------------
+   Small utility & toast
+   -------------------------- */
+function showToast(msg = '', ms = 2000){
   const toastEl = document.getElementById('toast');
-  let toastTimer = null;
-  function showToast(msg = '…', ms = 2200){
-    if(!toastEl) return;
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    if(toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(()=> { toastEl.classList.remove('show'); toastTimer = null; }, ms);
+  if(!toastEl) return;
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastEl._t);
+  toastEl._t = setTimeout(()=> toastEl.classList.remove('show'), ms);
+}
+async function urlExists(url){
+  if(!url) return false;
+  try{
+    const r = await fetch(url, { method: 'HEAD', mode: 'cors' });
+    return r && r.ok;
+  }catch(e){
+    try {
+      const r2 = await fetch(url, { method: 'GET', mode: 'cors' });
+      return r2 && r2.ok;
+    } catch(e2) {
+      return false;
+    }
   }
+}
+function placeholderDataUrl(text){
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450"><rect width="100%" height="100%" fill="#070909"/><text x="50%" y="50%" dy=".35em" text-anchor="middle" fill="#6b7" font-family="Arial" font-size="20">${text}</text></svg>`);
+}
 
-  // Safe media loader (reads only)
-  function showMediaUnavailable(elId){
-    const el = document.getElementById(elId);
-    if(!el) return;
-    const container = el.closest('.media') || el.parentElement;
-    if(container){
-      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-weight:700">Preview unavailable</div>';
+/* --------------------------
+   Safe media loader (no DB required)
+   -------------------------- */
+async function loadMedia(elId, path, type = 'video', posterPath = null){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  const url = (ASSET_BASE || '') + path;
+  const ok = await urlExists(url);
+  if(!ok){
+    if(type === 'video'){
+      const btn = document.querySelector(`.btn-play[data-video="${elId}"]`);
+      if(btn){ btn.disabled = true; btn.textContent = 'No preview'; btn.style.opacity = 0.7; btn.classList.remove('btn-play'); }
+      if(posterPath){
+        const posterUrl = (ASSET_BASE || '') + posterPath;
+        if(await urlExists(posterUrl)) el.setAttribute('poster', posterUrl);
+      }
+      return;
     } else {
-      el.alt = el.alt ? el.alt + ' — preview unavailable' : 'Preview unavailable';
+      el.src = placeholderDataUrl('Thumbnail unavailable');
+      return;
     }
   }
-
-  function loadMedia(elId, path, type="video", posterPath=null){
-    const el = document.getElementById(elId);
-    if(!el) return;
-    const fileRef = storageRef(storage, path);
-    getDownloadURL(fileRef).then(url=>{
-      if(type === "video"){
-        let source = el.querySelector("source");
-        if(!source){
-          source = document.createElement('source');
-          el.appendChild(source);
-        }
-        source.setAttribute('src', url);
-        if(url.endsWith('.mp4')) source.setAttribute('type','video/mp4');
-        if(posterPath){
-          getDownloadURL(storageRef(storage, posterPath))
-            .then(posterUrl => el.setAttribute('poster', posterUrl))
-            .catch(()=>{/* poster missing — ignore */});
-        }
-        try { el.load(); } catch(e){}
-      } else if(type === "img"){
-        el.src = url;
-        el.onerror = () => showMediaUnavailable(elId);
-      }
-    }).catch(err=>{
-      console.warn("Could not load media:", path, err);
-      showMediaUnavailable(elId);
-    });
-  }
-
-  // Load page assets (reads)
-  loadMedia("video-short", "videos/short-teaser.mp4", "video", "thumbnails/short.jpg");
-  loadMedia("video-full",  "videos/full-project.mp4", "video", "thumbnails/full.jpg");
-  loadMedia("video-high",  "videos/highlight-reel.mp4", "video", "thumbnails/high.jpg");
-  loadMedia("thumb-teaser", "thumbnails/teaser.jpg", "img");
-  loadMedia("modal-img-teaser", "thumbnails/teaser-large.jpg", "img");
-
-  // Server-side folder creation (call Cloud Function you deploy)
-  async function createFoldersServerSide(){
-    if(!CREATE_FOLDERS_URL){
-      console.warn('CREATE_FOLDERS_URL not set — skipping server-side folder creation.');
-      return {ok:false, error:'no-endpoint'};
+  if(type === 'video'){
+    const source = el.querySelector('source');
+    if(source) source.src = url; else el.src = url;
+    if(posterPath){
+      const posterUrl = (ASSET_BASE || '') + posterPath;
+      if(await urlExists(posterUrl)) el.setAttribute('poster', posterUrl);
     }
-    try{
-      showToast('Setting up storage folders...', 2200);
-      const res = await fetch(CREATE_FOLDERS_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(API_KEY ? {'x-api-key': API_KEY} : {})
-        },
-        body: JSON.stringify({}) // function uses defaults if empty
-      });
-      const json = await res.json().catch(()=>({ok:false, error:'invalid-json'}));
-      if(!res.ok){
-        console.warn('Folder API returned non-OK', res.status, json);
-        showToast('Folder setup failed', 2200);
-        return {ok:false, status:res.status, json};
-      }
-      console.log('Folder API result', json);
-      showToast('Folders ready', 1600);
-      return json;
-    } catch(err){
-      console.warn('Folder setup error', err);
-      showToast('Folder setup error', 2000);
-      return {ok:false, error: String(err)};
-    }
+    try { el.load(); } catch(e){}
+  } else {
+    el.src = url;
+    el.onerror = () => { el.src = placeholderDataUrl('Thumbnail unavailable'); };
   }
+}
 
-  if(navigator.onLine) createFoldersServerSide();
-  window.addEventListener('online', ()=> createFoldersServerSide());
+/* --------------------------
+   Init page assets
+   -------------------------- */
+async function initAssets(){
+  await Promise.all([
+    loadMedia('video-short', assetPaths.videos.short, 'video', assetPaths.thumbs.short),
+    loadMedia('video-full', assetPaths.videos.full, 'video', assetPaths.thumbs.full),
+    loadMedia('video-high', assetPaths.videos.high, 'video', assetPaths.thumbs.high),
+    loadMedia('thumb-teaser', assetPaths.thumbs.teaser, 'img'),
+    loadMedia('modal-img-teaser', assetPaths.thumbs.teaser_large, 'img')
+  ]);
+}
 
-  // Play/pause behaviour and modal logic (kept minimal and resilient)
-  document.addEventListener('click', (e) => {
-    const playBtn = e.target.closest('.btn-play');
-    if(playBtn){
-      const vidId = playBtn.getAttribute('data-video');
-      const vid = document.getElementById(vidId);
-      if(!vid) return;
-      document.querySelectorAll('video').forEach(v=>{ if(v !== vid) v.pause(); });
-      if(vid.paused){ vid.play().catch(()=>{}); playBtn.textContent='⏸ Pause'; }
-      else { vid.pause(); playBtn.textContent='▶ Play'; }
-      vid.onended = ()=> { playBtn.textContent='▶ Play'; };
-    }
-
-    const viewBtn = e.target.closest('.btn-view');
-    if(viewBtn){
-      const modalId = viewBtn.getAttribute('data-modal');
-      if(modalId) openModal(modalId);
-    }
-  });
-
-  // Modal & playlist management (client reads playlist URLs)
-  const modalUrlsCache = {};
-  const modalIndex = {};
-  const lastFocusMap = {};
-
-  async function loadPlaylist(modalId){
-    const modalPlaylistPaths = {
-      "modal-short": ["videos/short-teaser.mp4","videos/short-bts.mp4"],
-      "modal-full":  ["videos/full-project.mp4","videos/full-breakdown.mp4"],
-      "modal-high":  ["videos/highlight-reel.mp4","videos/highlight-extra.mp4"]
-    };
-    if(modalUrlsCache[modalId]) return modalUrlsCache[modalId];
-    const paths = modalPlaylistPaths[modalId] || [];
-    const promises = paths.map(p => getDownloadURL(storageRef(storage, p)).catch(err => { console.warn('Playlist item failed', p, err); return null; }) );
-    const results = await Promise.all(promises);
-    const urls = results.filter(Boolean);
-    modalUrlsCache[modalId] = urls;
-    return urls;
+/* --------------------------
+   Existing modal playlist system (unchanged)
+   -------------------------- */
+const modalPlaylistPaths = {
+  'modal-short': [ assetPaths.videos.short, assetPaths.videos.short_bts ],
+  'modal-full':  [ assetPaths.videos.full, assetPaths.videos.full_breakdown ],
+  'modal-high':  [ assetPaths.videos.high, assetPaths.videos.high_extra ]
+};
+const modalUrlsCache = {};
+const modalIndex = {};
+async function loadPlaylist(modalId){
+  if(modalUrlsCache[modalId] && modalUrlsCache[modalId].length) return modalUrlsCache[modalId];
+  const paths = modalPlaylistPaths[modalId] || [];
+  if(paths.length === 0){
+    const pageMap = { 'modal-short':'video-short','modal-full':'video-full','modal-high':'video-high' }[modalId];
+    const pageVideo = document.getElementById(pageMap);
+    const candidate = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
+    if(candidate) { modalUrlsCache[modalId] = [candidate]; return modalUrlsCache[modalId]; }
+    return [];
   }
-
-  function setModalIndex(modalId, idx){
-    const urls = modalUrlsCache[modalId] || [];
-    if(!urls.length) return;
-    idx = ((idx % urls.length) + urls.length) % urls.length;
-    modalIndex[modalId] = idx;
-    const vid = document.getElementById(modalId + '-video');
-    const indexEl = document.getElementById(modalId + '-index');
-    if(!vid) return;
-    const url = urls[idx];
-    const srcEl = vid.querySelector('source');
-    if(srcEl) srcEl.setAttribute('src', url); else vid.src = url;
-    try { vid.load(); vid.play().catch(()=>{}); } catch(e){}
-    if(indexEl) indexEl.textContent = (idx+1) + ' / ' + urls.length;
-  }
-
-  function openModal(modalId){
-    const modal = document.getElementById(modalId);
-    if(!modal) return;
-    lastFocusMap[modalId] = document.activeElement;
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden','false');
-    modal.setAttribute('aria-modal','true');
-    document.body.style.overflow = 'hidden';
-    const closeBtn = modal.querySelector('.close');
-    if(closeBtn) closeBtn.focus();
-    loadPlaylist(modalId).then(urls=>{
-      if(urls.length){
-        modalIndex[modalId] = modalIndex[modalId] || 0;
-        setModalIndex(modalId, modalIndex[modalId]);
+  const checks = await Promise.all(paths.map(async p=>{
+    const full = (ASSET_BASE||'') + p;
+    return (await urlExists(full)) ? full : null;
+  }));
+  const urls = checks.filter(Boolean);
+  modalUrlsCache[modalId] = urls;
+  return urls;
+}
+function setModalIndex(modalId, idx){
+  const urls = modalUrlsCache[modalId] || [];
+  if(!urls.length) return;
+  idx = ((idx % urls.length) + urls.length) % urls.length;
+  modalIndex[modalId] = idx;
+  const vid = document.getElementById(modalId + '-video');
+  const indexEl = document.getElementById(modalId + '-index');
+  if(!vid) return;
+  const url = urls[idx];
+  const srcEl = vid.querySelector('source');
+  if(srcEl) srcEl.src = url; else vid.src = url;
+  try { vid.load(); vid.play().catch(()=>{}); } catch(e){}
+  if(indexEl) indexEl.textContent = (idx+1) + ' / ' + urls.length;
+}
+function openModal(modalId){
+  const modal = document.getElementById(modalId);
+  if(!modal) return;
+  modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.style.overflow = 'hidden';
+  loadPlaylist(modalId).then(urls=>{
+    if(urls.length){ modalIndex[modalId] = modalIndex[modalId] || 0; setModalIndex(modalId, modalIndex[modalId]); }
+    else {
+      const pageVideoId = { "modal-short":"video-short", "modal-full":"video-full", "modal-high":"video-high" }[modalId];
+      const pageVideo = document.getElementById(pageVideoId);
+      const psrc = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
+      const vid = document.getElementById(modalId + '-video');
+      if(vid && psrc){
+        const srcEl = vid.querySelector('source'); if(srcEl) srcEl.src = psrc; else vid.src = psrc;
+        try { vid.load(); vid.play().catch(()=>{}); } catch(e){}
+        const indexEl = document.getElementById(modalId + '-index'); if(indexEl) indexEl.textContent = '1 / 1';
       } else {
-        const pageVideoId = {"modal-short":"video-short","modal-full":"video-full","modal-high":"video-high"}[modalId];
-        const pageVideo = document.getElementById(pageVideoId);
-        const psrc = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
-        const vid = document.getElementById(modalId + '-video');
-        if(vid && psrc){
-          const srcEl = vid.querySelector('source');
-          if(srcEl) srcEl.setAttribute('src', psrc); else vid.src = psrc;
-          try{ vid.load(); vid.play().catch(()=>{});}catch(e){}
-          const indexEl = document.getElementById(modalId + '-index');
-          if(indexEl) indexEl.textContent = '1 / 1';
-        }
-      }
-    }).catch(err=>{ console.warn('Failed to load playlist for', modalId, err); });
-  }
-
-  function closeModal(modalId){
-    const modal = document.getElementById(modalId);
-    if(!modal) return;
-    const vid = document.getElementById(modalId + '-video');
-    if(vid){
-      try{ vid.pause(); }catch(e){}
-      const source = vid.querySelector('source');
-      if(source) source.setAttribute('src',''); else vid.removeAttribute('src');
-      try{ vid.load(); }catch(e){}
-    }
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden','true');
-    modal.removeAttribute('aria-modal');
-    document.body.style.overflow = '';
-    const last = lastFocusMap[modalId];
-    if(last && typeof last.focus === 'function') last.focus();
-  }
-
-  document.querySelectorAll('.modal').forEach(m=> m.addEventListener('click',(e)=> { if(e.target===m) closeModal(m.id); }));
-  document.addEventListener('keydown', e=>{
-    if(e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m=>closeModal(m.id));
-    if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-      const openModalEl = document.querySelector('.modal.open');
-      if(openModalEl){
-        const id = openModalEl.id;
-        const urls = modalUrlsCache[id] || [];
-        const current = modalIndex[id] || 0;
-        if(urls.length){
-          if(e.key === 'ArrowLeft') setModalIndex(id, current - 1);
-          if(e.key === 'ArrowRight') setModalIndex(id, current + 1);
-        }
+        showToast('No video available for this modal', 2000);
       }
     }
+  }).catch(err=>{ console.warn('playlist load failed', err); showToast('Could not load playlist', 1400); });
+}
+function closeModal(modalId){
+  const modal = document.getElementById(modalId);
+  if(!modal) return;
+  const vid = document.getElementById(modalId + '-video');
+  if(vid){
+    vid.pause();
+    const source = vid.querySelector('source');
+    if(source) { source.src = ""; } else { vid.removeAttribute('src'); }
+    try { vid.load(); } catch(e){}
+  }
+  modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); document.body.style.overflow = '';
+}
+
+/* --------------------------
+   Player overlay logic (ENLARGE + PLAY on same page)
+   -------------------------- */
+const playerOverlay = document.getElementById('player-overlay');
+const playerVideo = document.getElementById('player-overlay-video');
+const playerCloseBtn = document.getElementById('player-close');
+const playerPauseResume = document.getElementById('player-pause-resume');
+const playerTime = document.getElementById('player-time');
+
+let currentSourceOwner = null; // element id of the original video we expanded
+function formatTime(s){
+  if(!isFinite(s) || s === undefined) return '0:00';
+  s = Math.floor(s);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function openPlayerOverlayFor(vidEl){
+  if(!vidEl) return;
+  // pause other page videos
+  document.querySelectorAll('video').forEach(v=>{ if(v !== vidEl && v !== playerVideo) v.pause(); });
+
+  // copy currentTime if available and source
+  const src = vidEl.querySelector('source')?.src || vidEl.currentSrc || vidEl.src;
+  if(!src){
+    showToast('No video available to play', 1400);
+    return;
+  }
+
+  // set overlay video src, seek to same time if possible
+  const wasPlaying = !vidEl.paused && !vidEl.ended;
+  const currentTime = vidEl.currentTime || 0;
+
+  // make sure player video uses same src
+  playerVideo.pause();
+  playerVideo.removeAttribute('src');
+  const sourceEl = document.createElement('source');
+  sourceEl.src = src;
+  playerVideo.appendChild(sourceEl);
+
+  // show overlay
+  playerOverlay.classList.add('open');
+  playerOverlay.setAttribute('aria-hidden','false');
+  document.body.style.overflow = 'hidden';
+
+  // try to sync time after loadmetadata
+  playerVideo.addEventListener('loadedmetadata', function onMeta(){
+    playerVideo.currentTime = Math.min(currentTime, playerVideo.duration || 0);
+    playerVideo.removeEventListener('loadedmetadata', onMeta);
+    updatePlayerTime();
   });
 
-  // Contact / Gmail helpers (unchanged)
-  const CONTACT_EMAIL = 'ywave.studio@gmail.com';
+  playerVideo.play().catch(()=>{ /* ignore play block */ });
 
-  function openGmailComposeInternal(to, subject = '', body = '') {
-    showToast('Opening Gmail…', 2200);
-    const encodedSubject = encodeURIComponent(subject || '');
-    const encodedBody = encodeURIComponent(body || '');
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodedSubject}&body=${encodedBody}&tf=1`;
-    const win = window.open(gmailUrl, '_blank');
-    if(!win){
-      const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodedSubject}&body=${encodedBody}`;
-      setTimeout(()=> { window.location.href = mailto; }, 250);
-    } else {
-      try { win.focus(); } catch(e){}
+  currentSourceOwner = vidEl.id || null;
+  updatePlayerControls();
+
+  // update time display while playing
+  playerVideo._timeUpdater && clearInterval(playerVideo._timeUpdater);
+  playerVideo._timeUpdater = setInterval(updatePlayerTime, 500);
+}
+
+function closePlayerOverlay(){
+  if(!playerOverlay.classList.contains('open')) return;
+  // remember time to restore if possible
+  const time = playerVideo.currentTime || 0;
+  // pause overlay
+  try { playerVideo.pause(); } catch(e){}
+  // clear source
+  try {
+    while(playerVideo.firstChild) playerVideo.removeChild(playerVideo.firstChild);
+  } catch(e){}
+  playerOverlay.classList.remove('open');
+  playerOverlay.setAttribute('aria-hidden','true');
+  document.body.style.overflow = '';
+
+  // restore time to original video if it exists
+  if(currentSourceOwner){
+    const orig = document.getElementById(currentSourceOwner);
+    if(orig){
+      try {
+        const origSource = orig.querySelector('source');
+        // only set time if same source
+        const origSrc = origSource?.src || orig.currentSrc || orig.src;
+        // if we used same src, restore time
+        if(origSrc){
+          orig.currentTime = time;
+          // leave orig paused (we won't auto-play it)
+        }
+      } catch(e){}
     }
   }
+  currentSourceOwner = null;
+  playerVideo._timeUpdater && clearInterval(playerVideo._timeUpdater);
+  updatePlayerTime();
+}
 
-  function openGmailCompose(evt) {
-    if(evt && evt.preventDefault) evt.preventDefault();
-    const subject = 'Quick project brief — Y Wave Studio';
-    const body =
+function updatePlayerControls(){
+  if(playerVideo.paused) playerPauseResume.textContent = '▶ Play';
+  else playerPauseResume.textContent = '⏸ Pause';
+  updatePlayerTime();
+}
+function updatePlayerTime(){
+  const cur = playerVideo.currentTime || 0;
+  const dur = playerVideo.duration || 0;
+  playerTime.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
+}
+
+/* wire player controls */
+playerCloseBtn.addEventListener('click', closePlayerOverlay);
+playerPauseResume.addEventListener('click', ()=>{
+  if(playerVideo.paused) playerVideo.play().catch(()=>{ showToast('Playback blocked — user gesture required', 1400); });
+  else playerVideo.pause();
+  updatePlayerControls();
+});
+playerVideo.addEventListener('play', updatePlayerControls);
+playerVideo.addEventListener('pause', updatePlayerControls);
+playerVideo.addEventListener('ended', ()=>{
+  playerPauseResume.textContent = '▶ Play';
+});
+
+/* keyboard: close overlay on Escape */
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && playerOverlay.classList.contains('open')) {
+    e.preventDefault();
+    closePlayerOverlay();
+    return;
+  }
+});
+
+/* --------------------------
+   Wire up "Play" buttons to open enlarged player (same page)
+   Also support keyboard keys (k / Space) when focused on card/button
+   -------------------------- */
+document.querySelectorAll('.btn-play').forEach(btn=>{
+  btn.addEventListener('click', (ev)=>{
+    const vidId = btn.getAttribute('data-video');
+    const vid = document.getElementById(vidId);
+    if(!vid) return;
+    openPlayerOverlayFor(vid);
+  });
+});
+
+// allow keyboard play: when space or 'k' pressed while a card or its controls is focused
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'k' || e.key === 'K' || e.key === ' '){
+    // check if active element is inside a card or is a play button
+    const active = document.activeElement;
+    if(!active) return;
+    const card = active.closest && active.closest('.card');
+    const playBtn = active.closest && active.closest('.btn-play') ? active.closest('.btn-play') : (active.classList && active.classList.contains('btn-play') ? active : null);
+    // if focused on a play button or inside a card, open overlay for that card's main video
+    if(playBtn || card){
+      e.preventDefault();
+      let targetVideoId = null;
+      if(playBtn){
+        targetVideoId = playBtn.getAttribute('data-video');
+      } else if(card){
+        // find the first video inside the card
+        const vid = card.querySelector('video');
+        if(vid) targetVideoId = vid.id;
+      }
+      if(targetVideoId){
+        const vidEl = document.getElementById(targetVideoId);
+        if(vidEl) openPlayerOverlayFor(vidEl);
+      }
+    }
+  }
+});
+
+/* --------------------------
+   Delegate modal nav & view more (unchanged)
+   -------------------------- */
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.modal-nav');
+  if(!btn) return;
+  const action = btn.getAttribute('data-action');
+  const modalCard = btn.closest('.modal');
+  if(!modalCard) return;
+  const modalId = modalCard.id;
+  const urls = modalUrlsCache[modalId] || [];
+  if(!urls.length) return;
+  const current = modalIndex[modalId] || 0;
+  if(action === 'prev') setModalIndex(modalId, current - 1);
+  else if(action === 'next') setModalIndex(modalId, current + 1);
+});
+
+document.querySelectorAll('.modal').forEach(modalEl=>{
+  modalEl.addEventListener('click', (e)=>{ if(e.target === modalEl) closeModal(modalEl.id); });
+});
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key === "Escape"){
+    document.querySelectorAll('.modal.open').forEach(m=> closeModal(m.id));
+  }
+  if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+    const openModalEl = document.querySelector('.modal.open');
+    if(openModalEl){
+      const id = openModalEl.id;
+      const urls = modalUrlsCache[id] || [];
+      if(urls.length){
+        const current = modalIndex[id] || 0;
+        if(e.key === "ArrowLeft") setModalIndex(id, current - 1);
+        if(e.key === "ArrowRight") setModalIndex(id, current + 1);
+      }
+    }
+  }
+});
+
+document.querySelectorAll('.btn-view').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ const modalId = btn.getAttribute('data-modal'); if(modalId) openModal(modalId); });
+});
+
+/* update play/pause labels for original page videos too (keeps UI in sync) */
+['video-short','video-full','video-high'].forEach(id=>{
+  const v = document.getElementById(id);
+  if(!v) return;
+  v.addEventListener('play', ()=> {
+    const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
+    if(btn) btn.textContent = '⏸ Pause';
+    document.querySelectorAll('video').forEach(other=>{ if(other !== v && other !== playerVideo) other.pause(); });
+  });
+  v.addEventListener('pause', ()=> {
+    const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
+    if(btn) btn.textContent = '▶ Play';
+  });
+});
+
+/* Pause modal videos when page hidden */
+document.addEventListener('visibilitychange', ()=> {
+  if(document.hidden) {
+    document.querySelectorAll('.modal video').forEach(v=>v.pause());
+    playerVideo && playerVideo.pause();
+  }
+});
+
+/* --------------------------
+   Contact / Gmail (unchanged)
+   -------------------------- */
+const CONTACT_EMAIL = 'ywave.studio@gmail.com';
+function openGmailComposeInternal(to, subject = '', body = '') {
+  showToast('Opening Gmail…', 2200);
+  const encodedSubject = encodeURIComponent(subject || '');
+  const encodedBody = encodeURIComponent(body || '');
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodedSubject}&body=${encodedBody}&tf=1`;
+  const win = window.open(gmailUrl, '_blank');
+  if(!win){
+    const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodedSubject}&body=${encodedBody}`;
+    setTimeout(()=> { window.location.href = mailto; }, 250);
+  } else {
+    try { win.focus(); } catch(e){}
+  }
+}
+function openGmailCompose(evt) {
+  if(evt && evt.preventDefault) evt.preventDefault();
+  const subject = 'Quick project brief — Y Wave Studio';
+  const body =
 `Hi Y Wave 👋
 
 Name: [Your name]
@@ -592,26 +818,20 @@ Short brief (just a few lines — what do you want? mood, refs, must-haves):
 [Paste your brief here]
 
 Thanks — speak soon!`;
-    openGmailComposeInternal(CONTACT_EMAIL, subject, body);
-  }
-
-  function handleContactSubmit(e){
-    e.preventDefault();
-    const name = document.getElementById('contact-name').value.trim();
-    const email = document.getElementById('contact-email').value.trim();
-    const phone = document.getElementById('contact-phone').value.trim() || 'Not provided';
-    const project = document.getElementById('contact-project').value.trim();
-    const budget = document.getElementById('contact-budget').value.trim() || 'Discuss';
-    const deadline = document.getElementById('contact-deadline').value.trim() || 'Flexible';
-    const message = document.getElementById('contact-message').value.trim();
-
-    if(!name || !email || !message){
-      alert('Please fill name, email and a short brief.');
-      return;
-    }
-
-    const subject = `${project} — Quick brief from ${name}`;
-    const body =
+  openGmailComposeInternal(CONTACT_EMAIL, subject, body);
+}
+function handleContactSubmit(e){
+  e.preventDefault();
+  const name = document.getElementById('contact-name').value.trim();
+  const email = document.getElementById('contact-email').value.trim();
+  const phone = document.getElementById('contact-phone').value.trim() || 'Not provided';
+  const project = document.getElementById('contact-project').value.trim();
+  const budget = document.getElementById('contact-budget').value.trim() || 'Discuss';
+  const deadline = document.getElementById('contact-deadline').value.trim() || 'Flexible';
+  const message = document.getElementById('contact-message').value.trim();
+  if(!name || !email || !message){ alert('Please fill name, email and a short brief.'); return; }
+  const subject = `${project} — Quick brief from ${name}`;
+  const body =
 `Hi Y Wave 👋
 
 Name: ${name}
@@ -626,21 +846,20 @@ Brief:
 ${message}
 
 Thanks!`;
+  showToast('Opening Gmail…', 2200);
+  setTimeout(()=> openGmailComposeInternal(CONTACT_EMAIL, subject, body), 250);
+}
 
-    showToast('Opening Gmail…', 2200);
-    setTimeout(()=> openGmailComposeInternal(CONTACT_EMAIL, subject, body), 250);
-  }
+/* expose a few functions for inline handlers */
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.handleContactSubmit = handleContactSubmit;
+window.openGmailCompose = openGmailCompose;
 
-  // expose functions used inline
-  window.openModal = openModal;
-  window.closeModal = closeModal;
-  window.handleContactSubmit = handleContactSubmit;
-  window.openGmailCompose = openGmailCompose;
+/* init */
+document.getElementById('year').textContent = new Date().getFullYear();
+initAssets().catch(e=>{ console.warn('initAssets failed', e); showToast('Some assets could not be loaded', 1800); });
 
-</script>
-
-<script>
-  document.getElementById('year').textContent = new Date().getFullYear();
 </script>
 </body>
 </html>
