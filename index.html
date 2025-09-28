@@ -200,8 +200,7 @@
     </div>
   </section>
 
-  <!-- Modals (unchanged structure, improved scripting handles focus/aria) -->
-
+  <!-- Modals (unchanged) -->
   <div id="modal-teaser" class="modal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-labelledby="modal-teaser-title">
       <div class="modal-header">
@@ -272,7 +271,7 @@
     </div>
   </div>
 
-  <!-- Contact section: phone input + toast behaviour -->
+  <!-- Contact section -->
   <section id="contact" style="margin-top:22px">
     <h3>Contact</h3>
     <p>Tell us about your project — quick and casual is perfect. We'll follow up fast.</p>
@@ -316,37 +315,46 @@
 <!-- Toast element -->
 <div id="toast" class="toast" aria-live="polite" aria-atomic="true">Opening Gmail…</div>
 
-<!-- Firebase + custom logic -->
+<!-- Client logic: Firebase init, media loader, and call to the server function -->
 <script type="module">
+  // PRE-FILLED Cloud Function endpoint (replace if your function URL differs)
+  const CREATE_FOLDERS_URL = 'https://us-central1-portfolio-59b1d.cloudfunctions.net/api/createFolders';
+  const API_KEY = null; // set string if you configured an API key for the function, otherwise null
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
-  import { getStorage, ref, getDownloadURL, uploadBytes, getMetadata } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+  import { getStorage, ref as storageRef, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  // Firebase config (new one you provided)
+  // Corrected storageBucket: use <project-id>.appspot.com
   const firebaseConfig = {
     apiKey: "AIzaSyBij1R1g_GVBhrPfDCtheu9oA1I0AAznZM",
     authDomain: "portfolio-59b1d.firebaseapp.com",
     projectId: "portfolio-59b1d",
-    storageBucket: "portfolio-59b1d.firebasestorage.app",
+    storageBucket: "portfolio-59b1d.appspot.com",
     messagingSenderId: "887069551819",
     appId: "1:887069551819:web:82904882b9129da4617f4e",
     measurementId: "G-C4KF46BS81"
   };
 
-  // Initialize Firebase + Analytics
   const app = initializeApp(firebaseConfig);
-  try { // analytics may fail in some contexts (e.g. local file://)
-    const analytics = getAnalytics(app);
-  } catch(e){ /* ignore analytics init errors */ }
+  try { getAnalytics(app); } catch(e){/* ignore analytics init errors */}
+
   const storage = getStorage(app);
+  const auth = getAuth(app);
 
-  // contact details centralised
-  const CONTACT_EMAIL = 'ywave.studio@gmail.com';
-  const CONTACT_PHONE = '03485527578';
+  // UI helpers (toast)
+  const toastEl = document.getElementById('toast');
+  let toastTimer = null;
+  function showToast(msg = '…', ms = 2200){
+    if(!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=> { toastEl.classList.remove('show'); toastTimer = null; }, ms);
+  }
 
-  /* --------------------------
-     Media loading
-     -------------------------- */
+  // Safe media loader (reads only)
   function showMediaUnavailable(elId){
     const el = document.getElementById(elId);
     if(!el) return;
@@ -361,9 +369,9 @@
   function loadMedia(elId, path, type="video", posterPath=null){
     const el = document.getElementById(elId);
     if(!el) return;
-    const fileRef = ref(storage, path);
+    const fileRef = storageRef(storage, path);
     getDownloadURL(fileRef).then(url=>{
-      if(type==="video"){
+      if(type === "video"){
         let source = el.querySelector("source");
         if(!source){
           source = document.createElement('source');
@@ -371,15 +379,15 @@
         }
         source.setAttribute('src', url);
         if(url.endsWith('.mp4')) source.setAttribute('type','video/mp4');
-        el.removeAttribute('poster');
         if(posterPath){
-          getDownloadURL(ref(storage, posterPath)).then(posterUrl=> el.setAttribute("poster", posterUrl)).catch(()=>{});
+          getDownloadURL(storageRef(storage, posterPath))
+            .then(posterUrl => el.setAttribute('poster', posterUrl))
+            .catch(()=>{/* poster missing — ignore */});
         }
-        el.load();
-      } else if(type==="img"){
+        try { el.load(); } catch(e){}
+      } else if(type === "img"){
         el.src = url;
-        el.onload = ()=>{};
-        el.onerror = ()=> showMediaUnavailable(elId);
+        el.onerror = () => showMediaUnavailable(elId);
       }
     }).catch(err=>{
       console.warn("Could not load media:", path, err);
@@ -387,104 +395,86 @@
     });
   }
 
-  // Load page assets from Firebase storage (single file per page video/thumb)
+  // Load page assets (reads)
   loadMedia("video-short", "videos/short-teaser.mp4", "video", "thumbnails/short.jpg");
-  loadMedia("video-full", "videos/full-project.mp4", "video", "thumbnails/full.jpg");
-  loadMedia("video-high", "videos/highlight-reel.mp4", "video", "thumbnails/high.jpg");
+  loadMedia("video-full",  "videos/full-project.mp4", "video", "thumbnails/full.jpg");
+  loadMedia("video-high",  "videos/highlight-reel.mp4", "video", "thumbnails/high.jpg");
   loadMedia("thumb-teaser", "thumbnails/teaser.jpg", "img");
   loadMedia("modal-img-teaser", "thumbnails/teaser-large.jpg", "img");
 
-  /* --------------------------
-     Modal playlist system
-     -------------------------- */
-
-  const modalPlaylistPaths = {
-    "modal-short": ["videos/short-teaser.mp4", "videos/short-bts.mp4"],
-    "modal-full":  ["videos/full-project.mp4", "videos/full-breakdown.mp4"],
-    "modal-high":  ["videos/highlight-reel.mp4", "videos/highlight-extra.mp4"]
-  };
-
-  // --- NEW: create storage folders (virtual) when online ---
-  // Cloud Storage uses object prefixes as folders. To "create" a folder we upload a tiny placeholder file (e.g. `.keep`).
-  // Note: this requires the client to have write access (Firebase Storage rules must allow it for the authenticated/anonymous user or the request will fail).
-  async function ensureFolderExists(folderPath){
-    const keepRef = ref(storage, folderPath + '.keep');
+  // Server-side folder creation (call Cloud Function you deploy)
+  async function createFoldersServerSide(){
+    if(!CREATE_FOLDERS_URL){
+      console.warn('CREATE_FOLDERS_URL not set — skipping server-side folder creation.');
+      return {ok:false, error:'no-endpoint'};
+    }
     try{
-      // try to fetch metadata to see if it exists
-      await getMetadata(keepRef);
-      console.log('Folder placeholder exists:', folderPath);
-      return false;
-    } catch(err){
-      // not found -> create placeholder
-      try{
-        const blob = new Blob(['placeholder'], {type:'text/plain'});
-        await uploadBytes(keepRef, blob);
-        console.log('Created folder placeholder at', folderPath);
-        return true;
-      } catch(uploadErr){
-        console.warn('Failed to create folder placeholder for', folderPath, uploadErr);
-        return false;
+      showToast('Setting up storage folders...', 2200);
+      const res = await fetch(CREATE_FOLDERS_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(API_KEY ? {'x-api-key': API_KEY} : {})
+        },
+        body: JSON.stringify({}) // function uses defaults if empty
+      });
+      const json = await res.json().catch(()=>({ok:false, error:'invalid-json'}));
+      if(!res.ok){
+        console.warn('Folder API returned non-OK', res.status, json);
+        showToast('Folder setup failed', 2200);
+        return {ok:false, status:res.status, json};
       }
+      console.log('Folder API result', json);
+      showToast('Folders ready', 1600);
+      return json;
+    } catch(err){
+      console.warn('Folder setup error', err);
+      showToast('Folder setup error', 2000);
+      return {ok:false, error: String(err)};
     }
   }
 
-  async function createStorageFoldersFromSections(){
-    if(!navigator.onLine){
-      console.log('Offline — skipping folder creation');
-      return;
+  if(navigator.onLine) createFoldersServerSide();
+  window.addEventListener('online', ()=> createFoldersServerSide());
+
+  // Play/pause behaviour and modal logic (kept minimal and resilient)
+  document.addEventListener('click', (e) => {
+    const playBtn = e.target.closest('.btn-play');
+    if(playBtn){
+      const vidId = playBtn.getAttribute('data-video');
+      const vid = document.getElementById(vidId);
+      if(!vid) return;
+      document.querySelectorAll('video').forEach(v=>{ if(v !== vid) v.pause(); });
+      if(vid.paused){ vid.play().catch(()=>{}); playBtn.textContent='⏸ Pause'; }
+      else { vid.pause(); playBtn.textContent='▶ Play'; }
+      vid.onended = ()=> { playBtn.textContent='▶ Play'; };
     }
 
-    // derive folder names from playlist map and a few extras
-    const folders = Object.keys(modalPlaylistPaths).reduce((acc, modalId)=>{
-      const key = modalId.replace('modal-',''); // short, full, high
-      acc.push(`videos/${key}/`, `thumbnails/${key}/`);
-      return acc;
-    }, []);
-    // add any other folders you want present
-    folders.push('videos/teaser/', 'thumbnails/teaser/');
+    const viewBtn = e.target.closest('.btn-view');
+    if(viewBtn){
+      const modalId = viewBtn.getAttribute('data-modal');
+      if(modalId) openModal(modalId);
+    }
+  });
 
-    const unique = [...new Set(folders)];
-    const results = await Promise.all(unique.map(f => ensureFolderExists(f)));
-    console.log('Folder creation results:', unique.map((f,i)=> ({folder:f,created:results[i]})));
-  }
-
-  // run once if online, and also run when the browser regains connectivity
-  if(navigator.onLine){ createStorageFoldersFromSections().catch(e=>console.warn(e)); }
-  window.addEventListener('online', ()=> createStorageFoldersFromSections().catch(e=>console.warn(e)));
-
-  /* --------------------------
-     Existing modal/player logic (unchanged)
-     -------------------------- */
-
+  // Modal & playlist management (client reads playlist URLs)
   const modalUrlsCache = {};
   const modalIndex = {};
   const lastFocusMap = {};
 
-  function loadPlaylist(modalId){
-    if(modalUrlsCache[modalId] && modalUrlsCache[modalId].length) {
-      return Promise.resolve(modalUrlsCache[modalId]);
-    }
+  async function loadPlaylist(modalId){
+    const modalPlaylistPaths = {
+      "modal-short": ["videos/short-teaser.mp4","videos/short-bts.mp4"],
+      "modal-full":  ["videos/full-project.mp4","videos/full-breakdown.mp4"],
+      "modal-high":  ["videos/highlight-reel.mp4","videos/highlight-extra.mp4"]
+    };
+    if(modalUrlsCache[modalId]) return modalUrlsCache[modalId];
     const paths = modalPlaylistPaths[modalId] || [];
-    if(paths.length === 0){
-      const pageVideoId = { "modal-short":"video-short", "modal-full":"video-full", "modal-high":"video-high" }[modalId];
-      const pageVideo = document.getElementById(pageVideoId);
-      const candidate = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
-      if(candidate) {
-        modalUrlsCache[modalId] = [candidate];
-        return Promise.resolve(modalUrlsCache[modalId]);
-      }
-      return Promise.resolve([]);
-    }
-
-    const promises = paths.map(p => getDownloadURL(ref(storage, p)).catch(err => {
-      console.warn("Playlist item failed:", p, err);
-      return null;
-    }));
-    return Promise.all(promises).then(results=>{
-      const urls = results.filter(Boolean);
-      modalUrlsCache[modalId] = urls;
-      return urls;
-    });
+    const promises = paths.map(p => getDownloadURL(storageRef(storage, p)).catch(err => { console.warn('Playlist item failed', p, err); return null; }) );
+    const results = await Promise.all(promises);
+    const urls = results.filter(Boolean);
+    modalUrlsCache[modalId] = urls;
+    return urls;
   }
 
   function setModalIndex(modalId, idx){
@@ -497,13 +487,8 @@
     if(!vid) return;
     const url = urls[idx];
     const srcEl = vid.querySelector('source');
-    if(srcEl){
-      srcEl.setAttribute('src', url);
-    } else {
-      vid.src = url;
-    }
-    vid.load();
-    vid.play().catch(()=>{});
+    if(srcEl) srcEl.setAttribute('src', url); else vid.src = url;
+    try { vid.load(); vid.play().catch(()=>{}); } catch(e){}
     if(indexEl) indexEl.textContent = (idx+1) + ' / ' + urls.length;
   }
 
@@ -515,36 +500,26 @@
     modal.setAttribute('aria-hidden','false');
     modal.setAttribute('aria-modal','true');
     document.body.style.overflow = 'hidden';
-
-    requestAnimationFrame(()=>{
-      const closeBtn = modal.querySelector('.close');
-      if(closeBtn) closeBtn.focus();
-    });
-
+    const closeBtn = modal.querySelector('.close');
+    if(closeBtn) closeBtn.focus();
     loadPlaylist(modalId).then(urls=>{
       if(urls.length){
         modalIndex[modalId] = modalIndex[modalId] || 0;
         setModalIndex(modalId, modalIndex[modalId]);
       } else {
-        const pageVideoId = { "modal-short":"video-short", "modal-full":"video-full", "modal-high":"video-high" }[modalId];
+        const pageVideoId = {"modal-short":"video-short","modal-full":"video-full","modal-high":"video-high"}[modalId];
         const pageVideo = document.getElementById(pageVideoId);
         const psrc = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
         const vid = document.getElementById(modalId + '-video');
         if(vid && psrc){
           const srcEl = vid.querySelector('source');
           if(srcEl) srcEl.setAttribute('src', psrc); else vid.src = psrc;
-          vid.load();
-          vid.play().catch(()=>{});
+          try{ vid.load(); vid.play().catch(()=>{});}catch(e){}
           const indexEl = document.getElementById(modalId + '-index');
           if(indexEl) indexEl.textContent = '1 / 1';
-        } else {
-          showMediaUnavailable(modalId + '-video');
         }
       }
-    }).catch(err=>{
-      console.warn("Failed to load playlist for", modalId, err);
-      showMediaUnavailable(modalId + '-video');
-    });
+    }).catch(err=>{ console.warn('Failed to load playlist for', modalId, err); });
   }
 
   function closeModal(modalId){
@@ -554,139 +529,36 @@
     if(vid){
       try{ vid.pause(); }catch(e){}
       const source = vid.querySelector('source');
-      if(source) { source.setAttribute('src', ''); }
-      else { vid.removeAttribute('src'); }
+      if(source) source.setAttribute('src',''); else vid.removeAttribute('src');
       try{ vid.load(); }catch(e){}
     }
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden','true');
     modal.removeAttribute('aria-modal');
     document.body.style.overflow = '';
-
     const last = lastFocusMap[modalId];
     if(last && typeof last.focus === 'function') last.focus();
   }
 
-  // prev/next handlers (delegated)
-  document.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.modal-nav');
-    if(!btn) return;
-    const action = btn.getAttribute('data-action');
-    const modalCard = btn.closest('.modal');
-    if(!modalCard) return;
-    const modalId = modalCard.id;
-    const urls = modalUrlsCache[modalId] || [];
-    if(!urls.length) return;
-    const current = modalIndex[modalId] || 0;
-    if(action === 'prev'){
-      setModalIndex(modalId, current - 1);
-    } else if(action === 'next'){
-      setModalIndex(modalId, current + 1);
-    }
-  });
-
-  // Close modal on overlay click (but not on clicks inside modal-card)
-  document.querySelectorAll('.modal').forEach(modalEl=>{
-    modalEl.addEventListener('click', (e)=>{
-      if(e.target === modalEl){
-        closeModal(modalEl.id);
-      }
-    });
-  });
-
-  // Close all modals on Escape and navigate with arrows
-  document.addEventListener('keydown', (e)=>{
-    if(e.key === "Escape"){
-      document.querySelectorAll('.modal.open').forEach(m=> closeModal(m.id));
-    }
-    if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+  document.querySelectorAll('.modal').forEach(m=> m.addEventListener('click',(e)=> { if(e.target===m) closeModal(m.id); }));
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Escape') document.querySelectorAll('.modal.open').forEach(m=>closeModal(m.id));
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       const openModalEl = document.querySelector('.modal.open');
       if(openModalEl){
         const id = openModalEl.id;
         const urls = modalUrlsCache[id] || [];
+        const current = modalIndex[id] || 0;
         if(urls.length){
-          const current = modalIndex[id] || 0;
-          if(e.key === "ArrowLeft") setModalIndex(id, current - 1);
-          if(e.key === "ArrowRight") setModalIndex(id, current + 1);
+          if(e.key === 'ArrowLeft') setModalIndex(id, current - 1);
+          if(e.key === 'ArrowRight') setModalIndex(id, current + 1);
         }
       }
     }
   });
 
-  // Wire up "View More" buttons to relevant modals
-  document.querySelectorAll('.btn-view').forEach(btn=>{
-    btn.addEventListener('click', (e)=>{
-      const modalId = btn.getAttribute('data-modal');
-      if(modalId) openModal(modalId);
-    });
-  });
-
-  // Play/pause buttons logic — ensure only one plays at a time
-  document.querySelectorAll('.btn-play').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const vidId = btn.getAttribute('data-video');
-      const vid = document.getElementById(vidId);
-      if(!vid) return;
-      // pause other videos
-      document.querySelectorAll('video').forEach(v=>{
-        if(v !== vid) v.pause();
-      });
-      // toggle this one
-      if(vid.paused){
-        vid.play().catch(()=>{});
-        btn.textContent = '⏸ Pause';
-      } else {
-        vid.pause();
-        btn.textContent = '▶ Play';
-      }
-      vid.onended = ()=> { btn.textContent = '▶ Play'; };
-    });
-  });
-
-  // When page video is played or paused update button label and pause others
-  ['video-short','video-full','video-high'].forEach(id=>{
-    const v = document.getElementById(id);
-    if(!v) return;
-    v.addEventListener('play', ()=> {
-      const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
-      if(btn) btn.textContent = '⏸ Pause';
-      document.querySelectorAll('video').forEach(other=>{
-        if(other !== v) other.pause();
-      });
-    });
-    v.addEventListener('pause', ()=> {
-      const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
-      if(btn) btn.textContent = '▶ Play';
-    });
-    v.addEventListener('error', ()=> showMediaUnavailable(id));
-  });
-
-  // Pause modal videos when page hidden
-  document.addEventListener('visibilitychange', ()=>{
-    if(document.hidden){
-      document.querySelectorAll('.modal video').forEach(v=>v.pause());
-    }
-  });
-
-  /* --------------------------
-     Toast helpers
-     -------------------------- */
-  const toastEl = document.getElementById('toast');
-  let toastTimer = null;
-  function showToast(msg = 'Opening Gmail…', ms = 2000){
-    if(!toastEl) return;
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    if(toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(()=>{
-      toastEl.classList.remove('show');
-      toastTimer = null;
-    }, ms);
-  }
-
-  /* --------------------------
-     Gmail / contact helpers (form-style email body)
-     -------------------------- */
+  // Contact / Gmail helpers (unchanged)
+  const CONTACT_EMAIL = 'ywave.studio@gmail.com';
 
   function openGmailComposeInternal(to, subject = '', body = '') {
     showToast('Opening Gmail…', 2200);
@@ -696,7 +568,6 @@
     const win = window.open(gmailUrl, '_blank');
     if(!win){
       const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodedSubject}&body=${encodedBody}`;
-      // slight delay to ensure toast is visible before leaving
       setTimeout(()=> { window.location.href = mailto; }, 250);
     } else {
       try { win.focus(); } catch(e){}
@@ -757,11 +628,10 @@ ${message}
 Thanks!`;
 
     showToast('Opening Gmail…', 2200);
-    // open after a small delay so toast is noticeable
     setTimeout(()=> openGmailComposeInternal(CONTACT_EMAIL, subject, body), 250);
   }
 
-  // Expose module-scoped functions to global so inline handlers work
+  // expose functions used inline
   window.openModal = openModal;
   window.closeModal = closeModal;
   window.handleContactSubmit = handleContactSubmit;
