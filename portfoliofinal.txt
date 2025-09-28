@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Y Wave Studio — Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Roboto:wght@300;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#00ffff;
+    --accent-2:#3de1d8;
+    --card: rgba(20,24,28,0.52);
+    --glass-border: rgba(255,255,255,0.06);
+    --muted: #9aa;
+    --maxw: 1100px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family: 'Roboto', sans-serif;
+    color:#fff;
+    min-height:100vh;
+    overflow-x:hidden;
+    background:linear-gradient(180deg,#061018 0%, #08141a 40%, #04111a 100%);
+  }
+  #bg-canvas{position:fixed; inset:0; z-index:0; pointer-events:none; display:block; width:100%; height:100%;}
+  .bg-overlay{position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(600px 400px at 10% 20%, rgba(0,200,200,0.03), transparent 8%),
+               radial-gradient(900px 500px at 85% 80%, rgba(0,180,255,0.02), transparent 12%); mix-blend-mode:screen;}
+  nav{position:sticky; top:12px; z-index:10; margin:12px auto 0; width:calc(100% - 32px); max-width:var(--maxw);
+    display:flex; justify-content:space-between; align-items:center; background:transparent; padding:8px 14px;}
+  nav h1{font-family:'Orbitron',sans-serif;color:var(--accent);letter-spacing:1.5px;font-size:1.05rem}
+  nav .links{display:flex; gap:14px; align-items:center}
+  nav a{color:rgba(255,255,255,0.85); text-decoration:none; font-weight:600; font-size:0.95rem}
+  nav a:hover{color:var(--accent-2)}
+  .wrap{width:100%; max-width:var(--maxw); margin:28px auto; padding:20px; position:relative; z-index:2;}
+  .hero{display:flex; gap:18px; align-items:center; justify-content:space-between;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+    border-radius:14px; padding:20px; margin-bottom:20px; border:1px solid var(--glass-border);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.5); backdrop-filter: blur(6px);}
+  .hero-left{max-width:66%}
+  .hero h2{font-family:'Orbitron'; font-size:clamp(20px,2.6vw,30px); margin-bottom:6px; color:var(--accent)}
+  .hero p{color:var(--muted); margin-bottom:6px}
+  .cta{margin-top:8px}
+  .cta .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+  .cta .btn-primary{background:var(--accent); color:#000}
+  .cta .btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--glass-border);margin-left:10px}
+  .portfolio{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; align-items:stretch;}
+  .card{display:flex; flex-direction:column; justify-content:space-between;
+    border-radius:12px; overflow:hidden; background:var(--card); border:1px solid var(--glass-border);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.55); transition: transform .28s ease, box-shadow .28s ease;}
+  .card:hover{ transform:translateY(-6px); box-shadow: 0 18px 44px rgba(0,200,200,0.06); }
+  .media{aspect-ratio:16/9; background:#000; display:flex;align-items:center;justify-content:center; overflow:hidden}
+  .media img, .media video{ width:100%; height:100%; object-fit:cover; display:block; transition: transform .45s ease;}
+  .card:hover .media img, .card:hover .media video{ transform: scale(1.03); }
+  .meta{ padding:14px; color:var(--muted); display:flex; flex-direction:column; gap:8px; min-height:120px }
+  .meta .title{ color:#fff; font-weight:700; font-size:1.03rem }
+  .meta small{ color:var(--muted); font-size:0.9rem }
+  .controls{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px; background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);}
+  .left-controls{ display:flex; gap:10px; align-items:center }
+  .btn{padding:10px 12px; border-radius:10px; border:none; cursor:pointer; font-weight:700; background:#111; color:#fff; transition: transform .18s ease, background .18s ease;}
+  .btn:hover{ transform:translateY(-2px) }
+  .btn-play{ background:var(--accent); color:#000; min-width:100px; }
+  .btn-play:hover{ background:var(--accent-2) }
+  .btn-view{ background:transparent; border:1px solid var(--glass-border); color:var(--muted); min-width:100px }
+  .btn-open{ background:var(--accent); color:#000; padding:10px 16px; border-radius:10px }
+  .modal{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:30;
+    background:rgba(2,6,8,0.6); opacity:0; visibility:hidden; transition:opacity .25s ease, visibility .25s ease;
+    padding:20px;}
+  .modal.open{ opacity:1; visibility:visible }
+  .modal-card{width:100%; max-width:920px; background: linear-gradient(180deg, rgba(12,14,16,0.95), rgba(8,10,12,0.98));
+    border-radius:12px; padding:18px; border:1px solid rgba(255,255,255,0.03); box-shadow:0 12px 50px rgba(0,0,0,0.7);}
+  .modal-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px }
+  .modal-header .left{ display:flex; align-items:center; gap:10px }
+  .modal-header h4{ color:var(--accent); margin:0 }
+  .close{ background:#111; color:#fff; border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:8px; cursor:pointer; }
+  .modal-nav { background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.04); padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:700; }
+  .modal-index { color:var(--muted); font-size:0.95rem; min-width:54px; text-align:center }
+  footer{ text-align:center; color:var(--muted); margin-top:28px; padding-bottom:36px; font-size:0.9rem; }
+
+  /* Contact */
+  #contact{ margin-top:28px; border-radius:12px; padding:18px; background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005)); border:1px solid var(--glass-border); }
+  #contact h3{ color:var(--accent); margin-bottom:8px }
+  #contact p{ color:var(--muted); margin-bottom:12px }
+  .contact-grid{ display:grid; grid-template-columns:1fr 300px; gap:18px; align-items:start; }
+  .contact-form input, .contact-form textarea, .contact-form select{ width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); background:rgba(0,0,0,0.45); color:#fff; }
+  .contact-form textarea{ min-height:120px; resize:vertical }
+  .contact-submit{ margin-top:8px; background:var(--accent); color:#000; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:700; }
+  .contact-aside{ color:var(--muted); font-size:0.95rem; border-left:1px solid rgba(255,255,255,0.03); padding-left:12px; }
+
+  /* Toast */
+  .toast {
+    position:fixed;
+    left:50%;
+    bottom:28px;
+    transform:translateX(-50%) translateY(10px);
+    background:rgba(10,12,14,0.85);
+    border:1px solid rgba(255,255,255,0.04);
+    color:#fff;
+    padding:10px 14px;
+    border-radius:10px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.5);
+    opacity:0;
+    visibility:hidden;
+    z-index:60;
+    transition:opacity .22s ease, transform .22s ease, visibility .22s;
+    font-weight:600;
+  }
+  .toast.show {
+    opacity:1;
+    visibility:visible;
+    transform:translateX(-50%) translateY(0);
+  }
+
+  @media (max-width:820px){
+    .hero-left{max-width:100%}
+    .portfolio{ grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px }
+    .contact-grid{ grid-template-columns:1fr; }
+    .contact-aside{ border-left:none; padding-left:0; border-top:1px solid rgba(255,255,255,0.03); padding-top:10px }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none!important}
+    #bg-canvas{display:none}
+    .bg-overlay{background:none}
+  }
+  /* responsive video in modal */
+  .modal-body video, .modal-body img{ width:100%; height:auto; max-height:70vh; display:block; border-radius:8px; background:#000 }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+<div class="bg-overlay" aria-hidden="true"></div>
+
+<nav>
+  <h1>Y WAVE STUDIO</h1>
+  <div class="links"><a href="#portfolio">Portfolio</a><a href="#contact">Contact</a></div>
+</nav>
+
+<main class="wrap" id="main">
+  <section class="hero">
+    <div class="hero-left">
+      <h2>Crafting Cinematic Experiences</h2>
+      <p>Script → Voice → Video. Short teasers, highlight reels and full case studies — polished for clients.</p>
+      <div class="cta">
+        <button class="btn btn-primary" onclick="document.getElementById('contact').scrollIntoView({behavior:'smooth'})">Start a Project</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('portfolio').scrollIntoView({behavior:'smooth'})">View Portfolio</button>
+      </div>
+    </div>
+    <div class="hero-right" style="min-width:220px; text-align:right">
+      <small style="color:var(--muted)">Recent</small>
+      <div style="margin-top:10px; font-weight:700">New Highlight Reel</div>
+    </div>
+  </section>
+
+  <section id="portfolio" style="margin-top:18px">
+    <h3 style="color:var(--accent); margin-bottom:8px">Featured Work</h3>
+    <p style="color:var(--muted); margin-bottom:14px">Click Play to preview or View More to explore related work.</p>
+    <div class="portfolio">
+
+      <!-- TEASER -->
+      <article class="card">
+        <div class="media">
+          <img id="thumb-teaser" alt="Project Teaser thumbnail">
+        </div>
+        <div class="meta"><div><div class="title">Project Teaser</div><small>Thumbnail preview</small></div></div>
+        <div class="controls"><div></div><div style="margin-left:auto"><button class="btn-open" onclick="openModal('modal-teaser')">Open</button></div></div>
+      </article>
+
+      <!-- SHORT TEASER -->
+      <article class="card" id="card-short">
+        <div class="media"><video id="video-short" preload="metadata" poster="" playsinline muted><source></video></div>
+        <div class="meta"><div><div class="title">Short Teaser Edit</div><small>00:30 — Teaser</small></div></div>
+        <div class="controls">
+          <div class="left-controls"><button class="btn btn-play" data-video="video-short">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Preview</div></div>
+          <div><button class="btn btn-view" data-modal="modal-short">View More</button></div>
+        </div>
+      </article>
+
+      <!-- FULL PROJECT -->
+      <article class="card" id="card-full">
+        <div class="media"><video id="video-full" preload="metadata" poster="" playsinline muted><source></video></div>
+        <div class="meta"><div><div class="title">Full-Length Showcase</div><small>Case study & breakdown</small></div></div>
+        <div class="controls">
+          <div class="left-controls"><button class="btn btn-play" data-video="video-full">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Case study</div></div>
+          <div><button class="btn btn-view" data-modal="modal-full">View More</button></div>
+        </div>
+      </article>
+
+      <!-- HIGHLIGHT REEL -->
+      <article class="card" id="card-high">
+        <div class="media"><video id="video-high" preload="metadata" poster="" playsinline muted><source></video></div>
+        <div class="meta"><div><div class="title">Highlight Reel</div><small>Best moments compilation</small></div></div>
+        <div class="controls">
+          <div class="left-controls"><button class="btn btn-play" data-video="video-high">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Reel</div></div>
+          <div><button class="btn btn-view" data-modal="modal-high">View More</button></div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Modals (unchanged structure, improved scripting handles focus/aria) -->
+
+  <div id="modal-teaser" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="modal-teaser-title">
+      <div class="modal-header">
+        <div class="left"><h4 id="modal-teaser-title">Project Teaser</h4></div>
+        <button class="close" onclick="closeModal('modal-teaser')">Close</button>
+      </div>
+      <div class="modal-body"><img id="modal-img-teaser" alt="Teaser large"></div>
+    </div>
+  </div>
+
+  <div id="modal-short" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="modal-short-title">
+      <div class="modal-header">
+        <div class="left">
+          <button class="modal-nav" data-action="prev" title="Previous">◀</button>
+          <h4 id="modal-short-title">Short Teaser Edit</h4>
+          <div id="modal-short-index" class="modal-index">0 / 0</div>
+          <button class="modal-nav" data-action="next" title="Next">▶</button>
+        </div>
+        <button class="close" onclick="closeModal('modal-short')">Close</button>
+      </div>
+      <div class="modal-body">
+        <video id="modal-short-video" controls>
+          <source>
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-full" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="modal-full-title">
+      <div class="modal-header">
+        <div class="left">
+          <button class="modal-nav" data-action="prev" title="Previous">◀</button>
+          <h4 id="modal-full-title">Full-Length Showcase</h4>
+          <div id="modal-full-index" class="modal-index">0 / 0</div>
+          <button class="modal-nav" data-action="next" title="Next">▶</button>
+        </div>
+        <button class="close" onclick="closeModal('modal-full')">Close</button>
+      </div>
+      <div class="modal-body">
+        <video id="modal-full-video" controls>
+          <source>
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-high" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="modal-high-title">
+      <div class="modal-header">
+        <div class="left">
+          <button class="modal-nav" data-action="prev" title="Previous">◀</button>
+          <h4 id="modal-high-title">Highlight Reel</h4>
+          <div id="modal-high-index" class="modal-index">0 / 0</div>
+          <button class="modal-nav" data-action="next" title="Next">▶</button>
+        </div>
+        <button class="close" onclick="closeModal('modal-high')">Close</button>
+      </div>
+      <div class="modal-body">
+        <video id="modal-high-video" controls>
+          <source>
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact section: phone input + toast behaviour -->
+  <section id="contact" style="margin-top:22px">
+    <h3>Contact</h3>
+    <p>Tell us about your project — quick and casual is perfect. We'll follow up fast.</p>
+    <div class="contact-grid">
+      <form class="contact-form" onsubmit="handleContactSubmit(event)">
+        <input type="text" id="contact-name" placeholder="Your name (e.g. Ali)" required />
+        <input type="email" id="contact-email" placeholder="Your email" required style="margin-top:8px" />
+        <input type="tel" id="contact-phone" placeholder="Phone (optional) e.g. 0348 552 7578" style="margin-top:8px" />
+        <label for="contact-project" style="display:block;margin-top:8px;color:var(--muted);font-size:0.9rem">Project type</label>
+        <select id="contact-project" style="margin-top:4px">
+          <option value="Short teaser">Short teaser (15–30s)</option>
+          <option value="Highlight reel">Highlight reel / compilation</option>
+          <option value="Full case study">Full case study</option>
+          <option value="Social cutdowns">Social cuts (Reels)</option>
+          <option value="Other">Other / Ask me</option>
+        </select>
+        <input type="text" id="contact-budget" placeholder="Budget (optional, e.g. $300 or Discuss)" style="margin-top:8px" />
+        <input type="text" id="contact-deadline" placeholder="Deadline (optional, e.g. 2025-11-01 or Flexible)" style="margin-top:8px" />
+        <textarea id="contact-message" placeholder="Write a short brief (what do you want? mood, refs, must-haves)..." style="margin-top:8px" required></textarea>
+        <button type="submit" class="contact-submit">Open in Gmail</button>
+        <p style="color:var(--muted); font-size:0.9rem; margin-top:8px">
+          Or <a id="mailto-link" href="#" onclick="openGmailCompose(event)">email us</a>
+        </p>
+      </form>
+      <aside class="contact-aside">
+        <strong style="color:#fff">Studio Info</strong>
+        <p style="margin-top:8px; color:var(--muted)">
+          Email: <a href="#" onclick="openGmailCompose(event)" style="color:var(--muted); text-decoration:underline">ywave.studio@gmail.com</a><br>
+          Phone: <a href="tel:03485527578" style="color:var(--muted); text-decoration:underline">03485527578</a><br>
+          Location: Remote / By appointment<br>
+          Turnaround: Depends on scope
+        </p>
+        <p style="margin-top:8px; color:var(--muted)">If you prefer, paste a link to your brief in the message and we'll follow up.</p>
+      </aside>
+    </div>
+  </section>
+
+  <footer>&copy; <span id="year"></span> Y Wave Studio · Script → Voice → Video</footer>
+</main>
+
+<!-- Toast element -->
+<div id="toast" class="toast" aria-live="polite" aria-atomic="true">Opening Gmail…</div>
+
+<!-- Firebase + custom logic -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics.js";
+  import { getStorage, ref, getDownloadURL, uploadBytes, getMetadata } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+  // Firebase config (new one you provided)
+  const firebaseConfig = {
+    apiKey: "AIzaSyBij1R1g_GVBhrPfDCtheu9oA1I0AAznZM",
+    authDomain: "portfolio-59b1d.firebaseapp.com",
+    projectId: "portfolio-59b1d",
+    storageBucket: "portfolio-59b1d.firebasestorage.app",
+    messagingSenderId: "887069551819",
+    appId: "1:887069551819:web:82904882b9129da4617f4e",
+    measurementId: "G-C4KF46BS81"
+  };
+
+  // Initialize Firebase + Analytics
+  const app = initializeApp(firebaseConfig);
+  try { // analytics may fail in some contexts (e.g. local file://)
+    const analytics = getAnalytics(app);
+  } catch(e){ /* ignore analytics init errors */ }
+  const storage = getStorage(app);
+
+  // contact details centralised
+  const CONTACT_EMAIL = 'ywave.studio@gmail.com';
+  const CONTACT_PHONE = '03485527578';
+
+  /* --------------------------
+     Media loading
+     -------------------------- */
+  function showMediaUnavailable(elId){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    const container = el.closest('.media') || el.parentElement;
+    if(container){
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-weight:700">Preview unavailable</div>';
+    } else {
+      el.alt = el.alt ? el.alt + ' — preview unavailable' : 'Preview unavailable';
+    }
+  }
+
+  function loadMedia(elId, path, type="video", posterPath=null){
+    const el = document.getElementById(elId);
+    if(!el) return;
+    const fileRef = ref(storage, path);
+    getDownloadURL(fileRef).then(url=>{
+      if(type==="video"){
+        let source = el.querySelector("source");
+        if(!source){
+          source = document.createElement('source');
+          el.appendChild(source);
+        }
+        source.setAttribute('src', url);
+        if(url.endsWith('.mp4')) source.setAttribute('type','video/mp4');
+        el.removeAttribute('poster');
+        if(posterPath){
+          getDownloadURL(ref(storage, posterPath)).then(posterUrl=> el.setAttribute("poster", posterUrl)).catch(()=>{});
+        }
+        el.load();
+      } else if(type==="img"){
+        el.src = url;
+        el.onload = ()=>{};
+        el.onerror = ()=> showMediaUnavailable(elId);
+      }
+    }).catch(err=>{
+      console.warn("Could not load media:", path, err);
+      showMediaUnavailable(elId);
+    });
+  }
+
+  // Load page assets from Firebase storage (single file per page video/thumb)
+  loadMedia("video-short", "videos/short-teaser.mp4", "video", "thumbnails/short.jpg");
+  loadMedia("video-full", "videos/full-project.mp4", "video", "thumbnails/full.jpg");
+  loadMedia("video-high", "videos/highlight-reel.mp4", "video", "thumbnails/high.jpg");
+  loadMedia("thumb-teaser", "thumbnails/teaser.jpg", "img");
+  loadMedia("modal-img-teaser", "thumbnails/teaser-large.jpg", "img");
+
+  /* --------------------------
+     Modal playlist system
+     -------------------------- */
+
+  const modalPlaylistPaths = {
+    "modal-short": ["videos/short-teaser.mp4", "videos/short-bts.mp4"],
+    "modal-full":  ["videos/full-project.mp4", "videos/full-breakdown.mp4"],
+    "modal-high":  ["videos/highlight-reel.mp4", "videos/highlight-extra.mp4"]
+  };
+
+  // --- NEW: create storage folders (virtual) when online ---
+  // Cloud Storage uses object prefixes as folders. To "create" a folder we upload a tiny placeholder file (e.g. `.keep`).
+  // Note: this requires the client to have write access (Firebase Storage rules must allow it for the authenticated/anonymous user or the request will fail).
+  async function ensureFolderExists(folderPath){
+    const keepRef = ref(storage, folderPath + '.keep');
+    try{
+      // try to fetch metadata to see if it exists
+      await getMetadata(keepRef);
+      console.log('Folder placeholder exists:', folderPath);
+      return false;
+    } catch(err){
+      // not found -> create placeholder
+      try{
+        const blob = new Blob(['placeholder'], {type:'text/plain'});
+        await uploadBytes(keepRef, blob);
+        console.log('Created folder placeholder at', folderPath);
+        return true;
+      } catch(uploadErr){
+        console.warn('Failed to create folder placeholder for', folderPath, uploadErr);
+        return false;
+      }
+    }
+  }
+
+  async function createStorageFoldersFromSections(){
+    if(!navigator.onLine){
+      console.log('Offline — skipping folder creation');
+      return;
+    }
+
+    // derive folder names from playlist map and a few extras
+    const folders = Object.keys(modalPlaylistPaths).reduce((acc, modalId)=>{
+      const key = modalId.replace('modal-',''); // short, full, high
+      acc.push(`videos/${key}/`, `thumbnails/${key}/`);
+      return acc;
+    }, []);
+    // add any other folders you want present
+    folders.push('videos/teaser/', 'thumbnails/teaser/');
+
+    const unique = [...new Set(folders)];
+    const results = await Promise.all(unique.map(f => ensureFolderExists(f)));
+    console.log('Folder creation results:', unique.map((f,i)=> ({folder:f,created:results[i]})));
+  }
+
+  // run once if online, and also run when the browser regains connectivity
+  if(navigator.onLine){ createStorageFoldersFromSections().catch(e=>console.warn(e)); }
+  window.addEventListener('online', ()=> createStorageFoldersFromSections().catch(e=>console.warn(e)));
+
+  /* --------------------------
+     Existing modal/player logic (unchanged)
+     -------------------------- */
+
+  const modalUrlsCache = {};
+  const modalIndex = {};
+  const lastFocusMap = {};
+
+  function loadPlaylist(modalId){
+    if(modalUrlsCache[modalId] && modalUrlsCache[modalId].length) {
+      return Promise.resolve(modalUrlsCache[modalId]);
+    }
+    const paths = modalPlaylistPaths[modalId] || [];
+    if(paths.length === 0){
+      const pageVideoId = { "modal-short":"video-short", "modal-full":"video-full", "modal-high":"video-high" }[modalId];
+      const pageVideo = document.getElementById(pageVideoId);
+      const candidate = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
+      if(candidate) {
+        modalUrlsCache[modalId] = [candidate];
+        return Promise.resolve(modalUrlsCache[modalId]);
+      }
+      return Promise.resolve([]);
+    }
+
+    const promises = paths.map(p => getDownloadURL(ref(storage, p)).catch(err => {
+      console.warn("Playlist item failed:", p, err);
+      return null;
+    }));
+    return Promise.all(promises).then(results=>{
+      const urls = results.filter(Boolean);
+      modalUrlsCache[modalId] = urls;
+      return urls;
+    });
+  }
+
+  function setModalIndex(modalId, idx){
+    const urls = modalUrlsCache[modalId] || [];
+    if(!urls.length) return;
+    idx = ((idx % urls.length) + urls.length) % urls.length;
+    modalIndex[modalId] = idx;
+    const vid = document.getElementById(modalId + '-video');
+    const indexEl = document.getElementById(modalId + '-index');
+    if(!vid) return;
+    const url = urls[idx];
+    const srcEl = vid.querySelector('source');
+    if(srcEl){
+      srcEl.setAttribute('src', url);
+    } else {
+      vid.src = url;
+    }
+    vid.load();
+    vid.play().catch(()=>{});
+    if(indexEl) indexEl.textContent = (idx+1) + ' / ' + urls.length;
+  }
+
+  function openModal(modalId){
+    const modal = document.getElementById(modalId);
+    if(!modal) return;
+    lastFocusMap[modalId] = document.activeElement;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden','false');
+    modal.setAttribute('aria-modal','true');
+    document.body.style.overflow = 'hidden';
+
+    requestAnimationFrame(()=>{
+      const closeBtn = modal.querySelector('.close');
+      if(closeBtn) closeBtn.focus();
+    });
+
+    loadPlaylist(modalId).then(urls=>{
+      if(urls.length){
+        modalIndex[modalId] = modalIndex[modalId] || 0;
+        setModalIndex(modalId, modalIndex[modalId]);
+      } else {
+        const pageVideoId = { "modal-short":"video-short", "modal-full":"video-full", "modal-high":"video-high" }[modalId];
+        const pageVideo = document.getElementById(pageVideoId);
+        const psrc = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
+        const vid = document.getElementById(modalId + '-video');
+        if(vid && psrc){
+          const srcEl = vid.querySelector('source');
+          if(srcEl) srcEl.setAttribute('src', psrc); else vid.src = psrc;
+          vid.load();
+          vid.play().catch(()=>{});
+          const indexEl = document.getElementById(modalId + '-index');
+          if(indexEl) indexEl.textContent = '1 / 1';
+        } else {
+          showMediaUnavailable(modalId + '-video');
+        }
+      }
+    }).catch(err=>{
+      console.warn("Failed to load playlist for", modalId, err);
+      showMediaUnavailable(modalId + '-video');
+    });
+  }
+
+  function closeModal(modalId){
+    const modal = document.getElementById(modalId);
+    if(!modal) return;
+    const vid = document.getElementById(modalId + '-video');
+    if(vid){
+      try{ vid.pause(); }catch(e){}
+      const source = vid.querySelector('source');
+      if(source) { source.setAttribute('src', ''); }
+      else { vid.removeAttribute('src'); }
+      try{ vid.load(); }catch(e){}
+    }
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden','true');
+    modal.removeAttribute('aria-modal');
+    document.body.style.overflow = '';
+
+    const last = lastFocusMap[modalId];
+    if(last && typeof last.focus === 'function') last.focus();
+  }
+
+  // prev/next handlers (delegated)
+  document.addEventListener('click', (e)=>{
+    const btn = e.target.closest('.modal-nav');
+    if(!btn) return;
+    const action = btn.getAttribute('data-action');
+    const modalCard = btn.closest('.modal');
+    if(!modalCard) return;
+    const modalId = modalCard.id;
+    const urls = modalUrlsCache[modalId] || [];
+    if(!urls.length) return;
+    const current = modalIndex[modalId] || 0;
+    if(action === 'prev'){
+      setModalIndex(modalId, current - 1);
+    } else if(action === 'next'){
+      setModalIndex(modalId, current + 1);
+    }
+  });
+
+  // Close modal on overlay click (but not on clicks inside modal-card)
+  document.querySelectorAll('.modal').forEach(modalEl=>{
+    modalEl.addEventListener('click', (e)=>{
+      if(e.target === modalEl){
+        closeModal(modalEl.id);
+      }
+    });
+  });
+
+  // Close all modals on Escape and navigate with arrows
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === "Escape"){
+      document.querySelectorAll('.modal.open').forEach(m=> closeModal(m.id));
+    }
+    if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+      const openModalEl = document.querySelector('.modal.open');
+      if(openModalEl){
+        const id = openModalEl.id;
+        const urls = modalUrlsCache[id] || [];
+        if(urls.length){
+          const current = modalIndex[id] || 0;
+          if(e.key === "ArrowLeft") setModalIndex(id, current - 1);
+          if(e.key === "ArrowRight") setModalIndex(id, current + 1);
+        }
+      }
+    }
+  });
+
+  // Wire up "View More" buttons to relevant modals
+  document.querySelectorAll('.btn-view').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{
+      const modalId = btn.getAttribute('data-modal');
+      if(modalId) openModal(modalId);
+    });
+  });
+
+  // Play/pause buttons logic — ensure only one plays at a time
+  document.querySelectorAll('.btn-play').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const vidId = btn.getAttribute('data-video');
+      const vid = document.getElementById(vidId);
+      if(!vid) return;
+      // pause other videos
+      document.querySelectorAll('video').forEach(v=>{
+        if(v !== vid) v.pause();
+      });
+      // toggle this one
+      if(vid.paused){
+        vid.play().catch(()=>{});
+        btn.textContent = '⏸ Pause';
+      } else {
+        vid.pause();
+        btn.textContent = '▶ Play';
+      }
+      vid.onended = ()=> { btn.textContent = '▶ Play'; };
+    });
+  });
+
+  // When page video is played or paused update button label and pause others
+  ['video-short','video-full','video-high'].forEach(id=>{
+    const v = document.getElementById(id);
+    if(!v) return;
+    v.addEventListener('play', ()=> {
+      const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
+      if(btn) btn.textContent = '⏸ Pause';
+      document.querySelectorAll('video').forEach(other=>{
+        if(other !== v) other.pause();
+      });
+    });
+    v.addEventListener('pause', ()=> {
+      const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
+      if(btn) btn.textContent = '▶ Play';
+    });
+    v.addEventListener('error', ()=> showMediaUnavailable(id));
+  });
+
+  // Pause modal videos when page hidden
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.hidden){
+      document.querySelectorAll('.modal video').forEach(v=>v.pause());
+    }
+  });
+
+  /* --------------------------
+     Toast helpers
+     -------------------------- */
+  const toastEl = document.getElementById('toast');
+  let toastTimer = null;
+  function showToast(msg = 'Opening Gmail…', ms = 2000){
+    if(!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>{
+      toastEl.classList.remove('show');
+      toastTimer = null;
+    }, ms);
+  }
+
+  /* --------------------------
+     Gmail / contact helpers (form-style email body)
+     -------------------------- */
+
+  function openGmailComposeInternal(to, subject = '', body = '') {
+    showToast('Opening Gmail…', 2200);
+    const encodedSubject = encodeURIComponent(subject || '');
+    const encodedBody = encodeURIComponent(body || '');
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodedSubject}&body=${encodedBody}&tf=1`;
+    const win = window.open(gmailUrl, '_blank');
+    if(!win){
+      const mailto = `mailto:${encodeURIComponent(to)}?subject=${encodedSubject}&body=${encodedBody}`;
+      // slight delay to ensure toast is visible before leaving
+      setTimeout(()=> { window.location.href = mailto; }, 250);
+    } else {
+      try { win.focus(); } catch(e){}
+    }
+  }
+
+  function openGmailCompose(evt) {
+    if(evt && evt.preventDefault) evt.preventDefault();
+    const subject = 'Quick project brief — Y Wave Studio';
+    const body =
+`Hi Y Wave 👋
+
+Name: [Your name]
+Email: [Your email]
+Phone: [Optional phone]
+
+Project type: [Short teaser / Highlight / Full / Social / Other]
+Budget: [e.g. $300 or 'Discuss']
+Deadline: [e.g. 2025-11-01 or 'Flexible']
+
+Short brief (just a few lines — what do you want? mood, refs, must-haves):
+[Paste your brief here]
+
+Thanks — speak soon!`;
+    openGmailComposeInternal(CONTACT_EMAIL, subject, body);
+  }
+
+  function handleContactSubmit(e){
+    e.preventDefault();
+    const name = document.getElementById('contact-name').value.trim();
+    const email = document.getElementById('contact-email').value.trim();
+    const phone = document.getElementById('contact-phone').value.trim() || 'Not provided';
+    const project = document.getElementById('contact-project').value.trim();
+    const budget = document.getElementById('contact-budget').value.trim() || 'Discuss';
+    const deadline = document.getElementById('contact-deadline').value.trim() || 'Flexible';
+    const message = document.getElementById('contact-message').value.trim();
+
+    if(!name || !email || !message){
+      alert('Please fill name, email and a short brief.');
+      return;
+    }
+
+    const subject = `${project} — Quick brief from ${name}`;
+    const body =
+`Hi Y Wave 👋
+
+Name: ${name}
+Email: ${email}
+Phone: ${phone}
+
+Project type: ${project}
+Budget: ${budget}
+Deadline: ${deadline}
+
+Brief:
+${message}
+
+Thanks!`;
+
+    showToast('Opening Gmail…', 2200);
+    // open after a small delay so toast is noticeable
+    setTimeout(()=> openGmailComposeInternal(CONTACT_EMAIL, subject, body), 250);
+  }
+
+  // Expose module-scoped functions to global so inline handlers work
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+  window.handleContactSubmit = handleContactSubmit;
+  window.openGmailCompose = openGmailCompose;
+
+</script>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
