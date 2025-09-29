@@ -112,61 +112,55 @@
     transform:translateX(-50%) translateY(0);
   }
 
-  /* Overlay enlarged player (plays inline on same page) */
-  #player-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 80;
-    background: rgba(0,0,0,0.85);
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .22s ease, visibility .22s ease;
-    padding: 18px;
-  }
-  #player-overlay.open { opacity: 1; visibility: visible; }
-  #player-card {
-    width: 100%;
-    max-width: 1200px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: #000;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.8);
-    transform: translateY(8px);
-    transition: transform .25s ease;
-  }
-  #player-overlay.open #player-card { transform: translateY(0); }
-  #player-card video {
-    display:block;
-    width:100%;
-    height: auto;
-    max-height: 84vh;
-    background: #000;
-  }
-  #player-controls {
+  /* YouTube-like controls for modal videos (only for HTML5 videos, not for YouTube iframes) */
+  .yt-controls {
+    margin-top:10px;
     display:flex;
-    gap:10px;
-    align-items:center;
-    padding:8px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
-    border-top: 1px solid rgba(255,255,255,0.03);
+    flex-direction:column;
+    gap:8px;
   }
-  #player-close { margin-left:auto; }
+  .yt-controls .row {
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .yt-controls .primary {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    justify-content:space-between;
+  }
+  .yt-play-btn {
+    padding:8px 12px;
+    border-radius:8px;
+    background:rgba(0,0,0,0.35);
+    border:1px solid rgba(255,255,255,0.04);
+    cursor:pointer;
+    font-weight:700;
+  }
+  .yt-time { font-size:0.9rem; color:var(--muted); min-width:85px; text-align:center }
+  .yt-range { -webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:6px; background:rgba(255,255,255,0.08); cursor:pointer; }
+  .yt-range::-webkit-slider-thumb{ -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); border:2px solid rgba(0,0,0,0.4) }
+  .yt-volume { width:110px; }
+  .yt-btn { background:transparent; border:1px solid rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px; cursor:pointer; color:var(--muted); }
+  .yt-controls .right-controls { display:flex; gap:6px; align-items:center; }
+  .yt-select { background:transparent; border:1px solid rgba(255,255,255,0.04); color:var(--muted); padding:6px 8px; border-radius:6px }
+  .modal-body { display:flex; flex-direction:column; gap:10px; }
+  .modal-body video, .modal-body img, .modal-body iframe{ width:100%; height:auto; max-height:70vh; display:block; border-radius:8px; background:#000; border:0 }
+
   @media (max-width:820px){
     .hero-left{max-width:100%}
     .portfolio{ grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:14px }
     .contact-grid{ grid-template-columns:1fr; }
     .contact-aside{ border-left:none; padding-left:0; border-top:1px solid rgba(255,255,255,0.03); padding-top:10px }
-    #player-card { max-width: 100%; border-radius: 8px; }
+    .yt-controls .primary { flex-direction:column; align-items:stretch; gap:6px; }
+    .yt-time { min-width:70px; text-align:left; }
   }
   @media (prefers-reduced-motion: reduce){
     *{transition:none!important}
     #bg-canvas{display:none}
     .bg-overlay{background:none}
   }
-  .modal-body video, .modal-body img{ width:100%; height:auto; max-height:70vh; display:block; border-radius:8px; background:#000 }
 </style>
 </head>
 <body>
@@ -197,59 +191,79 @@
 
   <section id="portfolio" style="margin-top:18px">
     <h3 style="color:var(--accent); margin-bottom:8px">Featured Work</h3>
-    <p style="color:var(--muted); margin-bottom:14px">Click Play to preview (it will enlarge) or View More to explore related work.</p>
+    <p style="color:var(--muted); margin-bottom:14px">Click Play to preview or View More to explore related work. (YouTube embeds supported.)</p>
     <div class="portfolio">
 
       <!-- TEASER -->
       <article class="card">
         <div class="media">
-          <img id="thumb-teaser" alt="Project Teaser" src="">
+          <!-- Thumbnail: replace REPLACE_WITH_YT_ID_TEASER with your YouTube video id or a full image URL -->
+          <img id="thumb-teaser" alt="Project Teaser thumbnail" src="https://img.youtube.com/vi/REPLACE_WITH_YT_ID_TEASER/hqdefault.jpg">
         </div>
         <div class="meta"><div><div class="title">Project Teaser</div><small>Thumbnail preview</small></div></div>
         <div class="controls"><div></div><div style="margin-left:auto"><button class="btn-open" onclick="openModal('modal-teaser')">Open</button></div></div>
       </article>
 
       <!-- SHORT TEASER -->
-      <article class="card" id="card-short" tabindex="0">
-        <div class="media"><video id="video-short" preload="metadata" poster=""><source></video></div>
+      <article class="card" id="card-short">
+        <div class="media">
+          <img alt="Short teaser thumbnail" src="https://img.youtube.com/vi/REPLACE_WITH_YT_ID_SHORT/hqdefault.jpg">
+        </div>
         <div class="meta"><div><div class="title">Short Teaser Edit</div><small>00:30 — Teaser</small></div></div>
         <div class="controls">
-          <div class="left-controls"><button class="btn btn-play" data-video="video-short" aria-controls="player-overlay">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Preview (enlarges)</div></div>
+          <div class="left-controls"><button class="btn btn-play" data-modal="modal-short">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Preview</div></div>
           <div><button class="btn btn-view" data-modal="modal-short">View More</button></div>
         </div>
       </article>
 
       <!-- FULL PROJECT -->
-      <article class="card" id="card-full" tabindex="0">
-        <div class="media"><video id="video-full" preload="metadata" poster=""><source></video></div>
+      <article class="card" id="card-full">
+        <div class="media"><img alt="Full project thumbnail" src="https://img.youtube.com/vi/REPLACE_WITH_YT_ID_FULL/hqdefault.jpg"></div>
         <div class="meta"><div><div class="title">Full-Length Showcase</div><small>Case study & breakdown</small></div></div>
         <div class="controls">
-          <div class="left-controls"><button class="btn btn-play" data-video="video-full" aria-controls="player-overlay">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Case study</div></div>
+          <div class="left-controls"><button class="btn btn-play" data-modal="modal-full">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Case study</div></div>
           <div><button class="btn btn-view" data-modal="modal-full">View More</button></div>
         </div>
       </article>
 
       <!-- HIGHLIGHT REEL -->
-      <article class="card" id="card-high" tabindex="0">
-        <div class="media"><video id="video-high" preload="metadata" poster=""><source></video></div>
+      <article class="card" id="card-high">
+        <div class="media"><img alt="Highlight reel thumbnail" src="https://img.youtube.com/vi/REPLACE_WITH_YT_ID_HIGH/hqdefault.jpg"></div>
         <div class="meta"><div><div class="title">Highlight Reel</div><small>Best moments compilation</small></div></div>
         <div class="controls">
-          <div class="left-controls"><button class="btn btn-play" data-video="video-high" aria-controls="player-overlay">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Reel</div></div>
+          <div class="left-controls"><button class="btn btn-play" data-modal="modal-high">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Reel</div></div>
           <div><button class="btn btn-view" data-modal="modal-high">View More</button></div>
+        </div>
+      </article>
+
+      <!-- SOCIAL CUT -->
+      <article class="card" id="card-social">
+        <div class="media"><img alt="Social cut thumbnail" src="https://img.youtube.com/vi/REPLACE_WITH_YT_ID_SOCIAL/hqdefault.jpg"></div>
+        <div class="meta"><div><div class="title">Social Cut</div><small>Short social edit</small></div></div>
+        <div class="controls">
+          <div class="left-controls"><button class="btn btn-play" data-modal="modal-social">▶ Play</button><div style="color:var(--muted); font-size:0.95rem">Social</div></div>
+          <div><button class="btn btn-view" data-modal="modal-social">View More</button></div>
         </div>
       </article>
 
     </div>
   </section>
 
-  <!-- Modals (unchanged) -->
+  <!-- Modals -->
+
   <div id="modal-teaser" class="modal" aria-hidden="true">
     <div class="modal-card" role="dialog" aria-labelledby="modal-teaser-title">
       <div class="modal-header">
         <div class="left"><h4 id="modal-teaser-title">Project Teaser</h4></div>
         <button class="close" onclick="closeModal('modal-teaser')">Close</button>
       </div>
-      <div class="modal-body"><img id="modal-img-teaser" alt="Teaser large"></div>
+      <div class="modal-body">
+        <!-- by default we use the video element for local files; if a YouTube URL is used the script will inject an iframe -->
+        <video id="modal-teaser-video" controls playsinline>
+          <source>
+          Your browser does not support the video tag.
+        </video>
+      </div>
     </div>
   </div>
 
@@ -265,7 +279,7 @@
         <button class="close" onclick="closeModal('modal-short')">Close</button>
       </div>
       <div class="modal-body">
-        <video id="modal-short-video" controls>
+        <video id="modal-short-video" controls playsinline>
           <source>
           Your browser does not support the video tag.
         </video>
@@ -285,7 +299,7 @@
         <button class="close" onclick="closeModal('modal-full')">Close</button>
       </div>
       <div class="modal-body">
-        <video id="modal-full-video" controls>
+        <video id="modal-full-video" controls playsinline>
           <source>
           Your browser does not support the video tag.
         </video>
@@ -305,7 +319,7 @@
         <button class="close" onclick="closeModal('modal-high')">Close</button>
       </div>
       <div class="modal-body">
-        <video id="modal-high-video" controls>
+        <video id="modal-high-video" controls playsinline>
           <source>
           Your browser does not support the video tag.
         </video>
@@ -313,19 +327,27 @@
     </div>
   </div>
 
-  <!-- Player overlay: enlarged inline player (plays on same page) -->
-  <div id="player-overlay" aria-hidden="true" role="dialog" aria-label="Video player">
-    <div id="player-card">
-      <video id="player-overlay-video" controls playsinline></video>
-      <div id="player-controls">
-        <button id="player-pause-resume" class="btn">⏸ Pause</button>
-        <div id="player-time" style="color:var(--muted); font-weight:600">0:00 / 0:00</div>
-        <button id="player-close" class="btn close" style="margin-left:auto">Close</button>
+  <div id="modal-social" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-labelledby="modal-social-title">
+      <div class="modal-header">
+        <div class="left">
+          <button class="modal-nav" data-action="prev" title="Previous">◀</button>
+          <h4 id="modal-social-title">Social Cut</h4>
+          <div id="modal-social-index" class="modal-index">0 / 0</div>
+          <button class="modal-nav" data-action="next" title="Next">▶</button>
+        </div>
+        <button class="close" onclick="closeModal('modal-social')">Close</button>
+      </div>
+      <div class="modal-body">
+        <video id="modal-social-video" controls playsinline>
+          <source>
+          Your browser does not support the video tag.
+        </video>
       </div>
     </div>
   </div>
 
-  <!-- Contact -->
+  <!-- Contact section -->
   <section id="contact" style="margin-top:22px">
     <h3>Contact</h3>
     <p>Tell us about your project — quick and casual is perfect. We'll follow up fast.</p>
@@ -366,360 +388,218 @@
   <footer>&copy; <span id="year"></span> Y Wave Studio · Script → Voice → Video</footer>
 </main>
 
-<!-- Toast -->
+<!-- Toast element -->
 <div id="toast" class="toast" aria-live="polite" aria-atomic="true">Opening Gmail…</div>
 
 <script>
-/* --------------------------
-   CONFIG / asset paths (set ASSET_BASE to your raw host)
-   -------------------------- */
-const ASSET_BASE = ''; // e.g. 'https://raw.githubusercontent.com/USERNAME/REPO/BRANCH/' or your static host
-const assetPaths = {
-  videos: {
-    short: 'videos/short-teaser.mp4',
-    short_bts: 'videos/short-bts.mp4',
-    full: 'videos/full-project.mp4',
-    full_breakdown: 'videos/full-breakdown.mp4',
-    high: 'videos/highlight-reel.mp4',
-    high_extra: 'videos/highlight-extra.mp4'
-  },
-  thumbs: {
-    teaser: 'thumbnails/teaser.jpg',
-    teaser_large: 'thumbnails/teaser-large.jpg',
-    short: 'thumbnails/short.jpg',
-    full: 'thumbnails/full.jpg',
-    high: 'thumbnails/high.jpg'
-  }
-};
+/*
+  NOTES:
+  - Replace placeholders like REPLACE_WITH_YT_ID_SHORT etc with your actual YouTube video IDs (or full youtube URLs).
+    Example:
+      "https://www.youtube.com/watch?v=abc123"  OR  "abc123"
+  - Script will detect YouTube links/ids and embed via iframe. If you prefer local files, put relative paths in the playlist arrays.
+*/
 
 /* --------------------------
-   Small utility & toast
-   -------------------------- */
-function showToast(msg = '', ms = 2000){
-  const toastEl = document.getElementById('toast');
-  if(!toastEl) return;
-  toastEl.textContent = msg;
-  toastEl.classList.add('show');
-  clearTimeout(toastEl._t);
-  toastEl._t = setTimeout(()=> toastEl.classList.remove('show'), ms);
-}
-async function urlExists(url){
-  if(!url) return false;
-  try{
-    const r = await fetch(url, { method: 'HEAD', mode: 'cors' });
-    return r && r.ok;
-  }catch(e){
-    try {
-      const r2 = await fetch(url, { method: 'GET', mode: 'cors' });
-      return r2 && r2.ok;
-    } catch(e2) {
-      return false;
-    }
-  }
-}
-function placeholderDataUrl(text){
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450"><rect width="100%" height="100%" fill="#070909"/><text x="50%" y="50%" dy=".35em" text-anchor="middle" fill="#6b7" font-family="Arial" font-size="20">${text}</text></svg>`);
-}
-
-/* --------------------------
-   Safe media loader (no DB required)
-   -------------------------- */
-async function loadMedia(elId, path, type = 'video', posterPath = null){
-  const el = document.getElementById(elId);
-  if(!el) return;
-  const url = (ASSET_BASE || '') + path;
-  const ok = await urlExists(url);
-  if(!ok){
-    if(type === 'video'){
-      const btn = document.querySelector(`.btn-play[data-video="${elId}"]`);
-      if(btn){ btn.disabled = true; btn.textContent = 'No preview'; btn.style.opacity = 0.7; btn.classList.remove('btn-play'); }
-      if(posterPath){
-        const posterUrl = (ASSET_BASE || '') + posterPath;
-        if(await urlExists(posterUrl)) el.setAttribute('poster', posterUrl);
-      }
-      return;
-    } else {
-      el.src = placeholderDataUrl('Thumbnail unavailable');
-      return;
-    }
-  }
-  if(type === 'video'){
-    const source = el.querySelector('source');
-    if(source) source.src = url; else el.src = url;
-    if(posterPath){
-      const posterUrl = (ASSET_BASE || '') + posterPath;
-      if(await urlExists(posterUrl)) el.setAttribute('poster', posterUrl);
-    }
-    try { el.load(); } catch(e){}
-  } else {
-    el.src = url;
-    el.onerror = () => { el.src = placeholderDataUrl('Thumbnail unavailable'); };
-  }
-}
-
-/* --------------------------
-   Init page assets
-   -------------------------- */
-async function initAssets(){
-  await Promise.all([
-    loadMedia('video-short', assetPaths.videos.short, 'video', assetPaths.thumbs.short),
-    loadMedia('video-full', assetPaths.videos.full, 'video', assetPaths.thumbs.full),
-    loadMedia('video-high', assetPaths.videos.high, 'video', assetPaths.thumbs.high),
-    loadMedia('thumb-teaser', assetPaths.thumbs.teaser, 'img'),
-    loadMedia('modal-img-teaser', assetPaths.thumbs.teaser_large, 'img')
-  ]);
-}
-
-/* --------------------------
-   Existing modal playlist system (unchanged)
+   Playlist configuration
    -------------------------- */
 const modalPlaylistPaths = {
-  'modal-short': [ assetPaths.videos.short, assetPaths.videos.short_bts ],
-  'modal-full':  [ assetPaths.videos.full, assetPaths.videos.full_breakdown ],
-  'modal-high':  [ assetPaths.videos.high, assetPaths.videos.high_extra ]
+  // You can use full YouTube URLs, shortened youtu.be URLs, or just the video id string.
+  // Example: "https://www.youtube.com/watch?v=abc123"  OR  "https://youtu.be/abc123"  OR  "abc123"
+  "modal-teaser": ["REPLACE_WITH_YT_ID_TEASER"],
+  "modal-short": ["REPLACE_WITH_YT_ID_SHORT"],
+  "modal-full":  ["REPLACE_WITH_YT_ID_FULL"],
+  "modal-high":  ["REPLACE_WITH_YT_ID_HIGH"],
+  "modal-social":["REPLACE_WITH_YT_ID_SOCIAL"]
 };
+
+/* --------------------------
+   Helpers: YouTube detection + embed URL builder
+   -------------------------- */
+function isYouTubeRef(ref){
+  if(!ref) return false;
+  // strings like: "abc123", "https://www.youtube.com/watch?v=abc123", "https://youtu.be/abc123"
+  return /youtube\.com|youtu\.be/.test(ref) || /^[A-Za-z0-9_-]{8,}$/.test(ref);
+}
+function extractYouTubeId(ref){
+  if(!ref) return null;
+  // If full url
+  const u = ref.trim();
+  // youtu.be short
+  const m1 = u.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/);
+  if(m1) return m1[1];
+  const m2 = u.match(/[?&]v=([A-Za-z0-9_-]{6,})/);
+  if(m2) return m2[1];
+  // if passed as raw ID
+  const raw = u.match(/^([A-Za-z0-9_-]{6,})$/);
+  if(raw) return raw[1];
+  return null;
+}
+function youTubeEmbedUrlFromRef(ref, autoplay = true){
+  const id = extractYouTubeId(ref);
+  if(!id) return null;
+  const params = new URLSearchParams({
+    rel: '0',
+    modestbranding: '1',
+    playsinline: '1',
+    autoplay: autoplay ? '1' : '0',
+    enablejsapi: '0'
+  });
+  return `https://www.youtube.com/embed/${id}?${params.toString()}`;
+}
+function youTubeThumbnail(ref){
+  const id = extractYouTubeId(ref);
+  if(!id) return '';
+  return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+}
+
+/* --------------------------
+   Modal / playlist logic
+   -------------------------- */
 const modalUrlsCache = {};
 const modalIndex = {};
-async function loadPlaylist(modalId){
-  if(modalUrlsCache[modalId] && modalUrlsCache[modalId].length) return modalUrlsCache[modalId];
+const lastFocusMap = {};
+
+function loadPlaylist(modalId){
+  // return array of refs (youtube ids/urls or local paths). Synchronous but keep as Promise for parity.
   const paths = modalPlaylistPaths[modalId] || [];
-  if(paths.length === 0){
-    const pageMap = { 'modal-short':'video-short','modal-full':'video-full','modal-high':'video-high' }[modalId];
-    const pageVideo = document.getElementById(pageMap);
-    const candidate = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
-    if(candidate) { modalUrlsCache[modalId] = [candidate]; return modalUrlsCache[modalId]; }
-    return [];
-  }
-  const checks = await Promise.all(paths.map(async p=>{
-    const full = (ASSET_BASE||'') + p;
-    return (await urlExists(full)) ? full : null;
-  }));
-  const urls = checks.filter(Boolean);
-  modalUrlsCache[modalId] = urls;
-  return urls;
+  return Promise.resolve(paths.slice());
 }
+
+function cleanupInjectedIframe(modalId){
+  const modal = document.getElementById(modalId);
+  if(!modal) return;
+  const existingIframe = modal.querySelector('iframe[data-injected="yt"]');
+  if(existingIframe){
+    existingIframe.remove();
+  }
+  // ensure there's a video element in modal-body for fallback/local playback
+  const vid = modal.querySelector('video');
+  if(vid && !modal.querySelector('video')) {
+    // nothing to do — video exists
+  }
+}
+
 function setModalIndex(modalId, idx){
   const urls = modalUrlsCache[modalId] || [];
   if(!urls.length) return;
   idx = ((idx % urls.length) + urls.length) % urls.length;
   modalIndex[modalId] = idx;
-  const vid = document.getElementById(modalId + '-video');
+
+  const urlRef = urls[idx];
+  const modal = document.getElementById(modalId);
+  if(!modal) return;
   const indexEl = document.getElementById(modalId + '-index');
-  if(!vid) return;
-  const url = urls[idx];
-  const srcEl = vid.querySelector('source');
-  if(srcEl) srcEl.src = url; else vid.src = url;
-  try { vid.load(); vid.play().catch(()=>{}); } catch(e){}
   if(indexEl) indexEl.textContent = (idx+1) + ' / ' + urls.length;
+
+  // Decide youtube vs local
+  if(isYouTubeRef(urlRef)){
+    // inject iframe embed and remove/hide any video sources
+    const embed = youTubeEmbedUrlFromRef(urlRef, true);
+    if(!embed){
+      console.warn('Invalid YouTube ref for modal', modalId, urlRef);
+      return;
+    }
+    // remove any previously injected iframe
+    cleanupInjectedIframe(modalId);
+
+    // Pause and clear any HTMLVideo in this modal
+    const vid = modal.querySelector('video');
+    if(vid){
+      try{ vid.pause(); }catch(e){}
+      // clear sources to stop network
+      const srcEl = vid.querySelector('source');
+      if(srcEl) srcEl.setAttribute('src','');
+      else vid.removeAttribute('src');
+      try{ vid.load(); }catch(e){}
+    }
+
+    // create iframe and append
+    const iframe = document.createElement('iframe');
+    iframe.setAttribute('src', embed);
+    iframe.setAttribute('frameborder','0');
+    iframe.setAttribute('allow','autoplay; encrypted-media; picture-in-picture');
+    iframe.setAttribute('allowfullscreen','');
+    iframe.setAttribute('data-injected','yt');
+    iframe.style.border = '0';
+    iframe.style.width = '100%';
+    iframe.style.height = '480px';
+    // replace existing media or append
+    const body = modal.querySelector('.modal-body');
+    // hide any video elements (we'll inject iframe)
+    body.querySelectorAll('video').forEach(v => v.style.display = 'none');
+    body.appendChild(iframe);
+  } else {
+    // treat as local/relative video path or full static URL to an mp4
+    // remove any injected iframe
+    cleanupInjectedIframe(modalId);
+    const vid = modal.querySelector('video');
+    if(!vid){
+      console.warn('No video element found in modal to play local file for', modalId);
+      return;
+    }
+    // set source and play
+    const srcEl = vid.querySelector('source');
+    if(srcEl) srcEl.setAttribute('src', urlRef);
+    else vid.setAttribute('src', urlRef);
+    try{ vid.style.display = ''; vid.load(); vid.play().catch(()=>{}); }catch(e){}
+    // attach custom controls if desired (function available later)
+    attachYouTubeControlsToModal(modalId);
+  }
 }
+
 function openModal(modalId){
   const modal = document.getElementById(modalId);
   if(!modal) return;
-  modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.style.overflow = 'hidden';
+  lastFocusMap[modalId] = document.activeElement;
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden','false');
+  modal.setAttribute('aria-modal','true');
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(()=>{ const closeBtn = modal.querySelector('.close'); if(closeBtn) closeBtn.focus(); });
+
   loadPlaylist(modalId).then(urls=>{
-    if(urls.length){ modalIndex[modalId] = modalIndex[modalId] || 0; setModalIndex(modalId, modalIndex[modalId]); }
-    else {
-      const pageVideoId = { "modal-short":"video-short", "modal-full":"video-full", "modal-high":"video-high" }[modalId];
-      const pageVideo = document.getElementById(pageVideoId);
-      const psrc = pageVideo?.querySelector('source')?.src || pageVideo?.currentSrc || pageVideo?.src;
-      const vid = document.getElementById(modalId + '-video');
-      if(vid && psrc){
-        const srcEl = vid.querySelector('source'); if(srcEl) srcEl.src = psrc; else vid.src = psrc;
-        try { vid.load(); vid.play().catch(()=>{}); } catch(e){}
-        const indexEl = document.getElementById(modalId + '-index'); if(indexEl) indexEl.textContent = '1 / 1';
-      } else {
-        showToast('No video available for this modal', 2000);
-      }
+    modalUrlsCache[modalId] = urls;
+    if(urls.length){
+      modalIndex[modalId] = modalIndex[modalId] || 0;
+      setModalIndex(modalId, modalIndex[modalId]);
+    } else {
+      // nothing to play
+      const vid = modal.querySelector('video');
+      if(vid) showPreviewUnavailable(modalId);
     }
-  }).catch(err=>{ console.warn('playlist load failed', err); showToast('Could not load playlist', 1400); });
+  }).catch(err=>{
+    console.warn('Failed to load playlist for', modalId, err);
+  });
 }
+
 function closeModal(modalId){
   const modal = document.getElementById(modalId);
   if(!modal) return;
-  const vid = document.getElementById(modalId + '-video');
-  if(vid){
-    vid.pause();
-    const source = vid.querySelector('source');
-    if(source) { source.src = ""; } else { vid.removeAttribute('src'); }
-    try { vid.load(); } catch(e){}
-  }
-  modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); document.body.style.overflow = '';
-}
-
-/* --------------------------
-   Player overlay logic (ENLARGE + PLAY on same page)
-   -------------------------- */
-const playerOverlay = document.getElementById('player-overlay');
-const playerVideo = document.getElementById('player-overlay-video');
-const playerCloseBtn = document.getElementById('player-close');
-const playerPauseResume = document.getElementById('player-pause-resume');
-const playerTime = document.getElementById('player-time');
-
-let currentSourceOwner = null; // element id of the original video we expanded
-function formatTime(s){
-  if(!isFinite(s) || s === undefined) return '0:00';
-  s = Math.floor(s);
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${sec.toString().padStart(2,'0')}`;
-}
-
-function openPlayerOverlayFor(vidEl){
-  if(!vidEl) return;
-  // pause other page videos
-  document.querySelectorAll('video').forEach(v=>{ if(v !== vidEl && v !== playerVideo) v.pause(); });
-
-  // copy currentTime if available and source
-  const src = vidEl.querySelector('source')?.src || vidEl.currentSrc || vidEl.src;
-  if(!src){
-    showToast('No video available to play', 1400);
-    return;
-  }
-
-  // set overlay video src, seek to same time if possible
-  const wasPlaying = !vidEl.paused && !vidEl.ended;
-  const currentTime = vidEl.currentTime || 0;
-
-  // make sure player video uses same src
-  playerVideo.pause();
-  playerVideo.removeAttribute('src');
-  const sourceEl = document.createElement('source');
-  sourceEl.src = src;
-  playerVideo.appendChild(sourceEl);
-
-  // show overlay
-  playerOverlay.classList.add('open');
-  playerOverlay.setAttribute('aria-hidden','false');
-  document.body.style.overflow = 'hidden';
-
-  // try to sync time after loadmetadata
-  playerVideo.addEventListener('loadedmetadata', function onMeta(){
-    playerVideo.currentTime = Math.min(currentTime, playerVideo.duration || 0);
-    playerVideo.removeEventListener('loadedmetadata', onMeta);
-    updatePlayerTime();
+  // stop and clean up videos and iframes
+  modal.querySelectorAll('video').forEach(vid=>{
+    try{ vid.pause(); }catch(e){}
+    const srcEl = vid.querySelector('source');
+    if(srcEl) srcEl.setAttribute('src','');
+    else vid.removeAttribute('src');
+    try{ vid.load(); }catch(e){}
   });
+  // remove injected iframe
+  const iframe = modal.querySelector('iframe[data-injected="yt"]');
+  if(iframe) iframe.remove();
+  // restore video elements display
+  modal.querySelectorAll('video').forEach(v => v.style.display = '');
 
-  playerVideo.play().catch(()=>{ /* ignore play block */ });
-
-  currentSourceOwner = vidEl.id || null;
-  updatePlayerControls();
-
-  // update time display while playing
-  playerVideo._timeUpdater && clearInterval(playerVideo._timeUpdater);
-  playerVideo._timeUpdater = setInterval(updatePlayerTime, 500);
-}
-
-function closePlayerOverlay(){
-  if(!playerOverlay.classList.contains('open')) return;
-  // remember time to restore if possible
-  const time = playerVideo.currentTime || 0;
-  // pause overlay
-  try { playerVideo.pause(); } catch(e){}
-  // clear source
-  try {
-    while(playerVideo.firstChild) playerVideo.removeChild(playerVideo.firstChild);
-  } catch(e){}
-  playerOverlay.classList.remove('open');
-  playerOverlay.setAttribute('aria-hidden','true');
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden','true');
+  modal.removeAttribute('aria-modal');
   document.body.style.overflow = '';
 
-  // restore time to original video if it exists
-  if(currentSourceOwner){
-    const orig = document.getElementById(currentSourceOwner);
-    if(orig){
-      try {
-        const origSource = orig.querySelector('source');
-        // only set time if same source
-        const origSrc = origSource?.src || orig.currentSrc || orig.src;
-        // if we used same src, restore time
-        if(origSrc){
-          orig.currentTime = time;
-          // leave orig paused (we won't auto-play it)
-        }
-      } catch(e){}
-    }
-  }
-  currentSourceOwner = null;
-  playerVideo._timeUpdater && clearInterval(playerVideo._timeUpdater);
-  updatePlayerTime();
+  const last = lastFocusMap[modalId];
+  if(last && typeof last.focus === 'function') last.focus();
 }
 
-function updatePlayerControls(){
-  if(playerVideo.paused) playerPauseResume.textContent = '▶ Play';
-  else playerPauseResume.textContent = '⏸ Pause';
-  updatePlayerTime();
-}
-function updatePlayerTime(){
-  const cur = playerVideo.currentTime || 0;
-  const dur = playerVideo.duration || 0;
-  playerTime.textContent = `${formatTime(cur)} / ${formatTime(dur)}`;
-}
-
-/* wire player controls */
-playerCloseBtn.addEventListener('click', closePlayerOverlay);
-playerPauseResume.addEventListener('click', ()=>{
-  if(playerVideo.paused) playerVideo.play().catch(()=>{ showToast('Playback blocked — user gesture required', 1400); });
-  else playerVideo.pause();
-  updatePlayerControls();
-});
-playerVideo.addEventListener('play', updatePlayerControls);
-playerVideo.addEventListener('pause', updatePlayerControls);
-playerVideo.addEventListener('ended', ()=>{
-  playerPauseResume.textContent = '▶ Play';
-});
-
-/* keyboard: close overlay on Escape */
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && playerOverlay.classList.contains('open')) {
-    e.preventDefault();
-    closePlayerOverlay();
-    return;
-  }
-});
-
-/* --------------------------
-   Wire up "Play" buttons to open enlarged player (same page)
-   Also support keyboard keys (k / Space) when focused on card/button
-   -------------------------- */
-document.querySelectorAll('.btn-play').forEach(btn=>{
-  btn.addEventListener('click', (ev)=>{
-    const vidId = btn.getAttribute('data-video');
-    const vid = document.getElementById(vidId);
-    if(!vid) return;
-    openPlayerOverlayFor(vid);
-  });
-});
-
-// allow keyboard play: when space or 'k' pressed while a card or its controls is focused
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'k' || e.key === 'K' || e.key === ' '){
-    // check if active element is inside a card or is a play button
-    const active = document.activeElement;
-    if(!active) return;
-    const card = active.closest && active.closest('.card');
-    const playBtn = active.closest && active.closest('.btn-play') ? active.closest('.btn-play') : (active.classList && active.classList.contains('btn-play') ? active : null);
-    // if focused on a play button or inside a card, open overlay for that card's main video
-    if(playBtn || card){
-      e.preventDefault();
-      let targetVideoId = null;
-      if(playBtn){
-        targetVideoId = playBtn.getAttribute('data-video');
-      } else if(card){
-        // find the first video inside the card
-        const vid = card.querySelector('video');
-        if(vid) targetVideoId = vid.id;
-      }
-      if(targetVideoId){
-        const vidEl = document.getElementById(targetVideoId);
-        if(vidEl) openPlayerOverlayFor(vidEl);
-      }
-    }
-  }
-});
-
-/* --------------------------
-   Delegate modal nav & view more (unchanged)
-   -------------------------- */
+/* prev/next buttons */
 document.addEventListener('click', (e)=>{
   const btn = e.target.closest('.modal-nav');
   if(!btn) return;
@@ -730,14 +610,23 @@ document.addEventListener('click', (e)=>{
   const urls = modalUrlsCache[modalId] || [];
   if(!urls.length) return;
   const current = modalIndex[modalId] || 0;
-  if(action === 'prev') setModalIndex(modalId, current - 1);
-  else if(action === 'next') setModalIndex(modalId, current + 1);
+  if(action === 'prev'){
+    setModalIndex(modalId, current - 1);
+  } else if(action === 'next'){
+    setModalIndex(modalId, current + 1);
+  }
 });
 
+/* overlay click to close */
 document.querySelectorAll('.modal').forEach(modalEl=>{
-  modalEl.addEventListener('click', (e)=>{ if(e.target === modalEl) closeModal(modalEl.id); });
+  modalEl.addEventListener('click', (e)=>{
+    if(e.target === modalEl){
+      closeModal(modalEl.id);
+    }
+  });
 });
 
+/* keyboard handling */
 document.addEventListener('keydown', (e)=>{
   if(e.key === "Escape"){
     document.querySelectorAll('.modal.open').forEach(m=> closeModal(m.id));
@@ -756,37 +645,181 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-document.querySelectorAll('.btn-view').forEach(btn=>{
-  btn.addEventListener('click', ()=>{ const modalId = btn.getAttribute('data-modal'); if(modalId) openModal(modalId); });
-});
-
-/* update play/pause labels for original page videos too (keeps UI in sync) */
-['video-short','video-full','video-high'].forEach(id=>{
-  const v = document.getElementById(id);
-  if(!v) return;
-  v.addEventListener('play', ()=> {
-    const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
-    if(btn) btn.textContent = '⏸ Pause';
-    document.querySelectorAll('video').forEach(other=>{ if(other !== v && other !== playerVideo) other.pause(); });
-  });
-  v.addEventListener('pause', ()=> {
-    const btn = document.querySelector(`.btn-play[data-video="${id}"]`);
-    if(btn) btn.textContent = '▶ Play';
+/* wire view/play buttons to open modals */
+document.querySelectorAll('.btn-view, .btn-play').forEach(btn=>{
+  btn.addEventListener('click', (e)=>{
+    const modalId = btn.getAttribute('data-modal');
+    if(modalId) openModal(modalId);
   });
 });
 
-/* Pause modal videos when page hidden */
-document.addEventListener('visibilitychange', ()=> {
-  if(document.hidden) {
-    document.querySelectorAll('.modal video').forEach(v=>v.pause());
-    playerVideo && playerVideo.pause();
+/* simple preview unavailable handler */
+function showPreviewUnavailable(modalId){
+  const modal = document.getElementById(modalId);
+  if(!modal) return;
+  const body = modal.querySelector('.modal-body');
+  if(body){
+    body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:220px;color:var(--muted);font-weight:700">Preview unavailable</div>';
   }
-});
+}
 
 /* --------------------------
-   Contact / Gmail (unchanged)
+   Optional custom controls for HTML5 videos (left as-is from the previous implementation)
+   These controls are only attached for HTML5 video elements (not for YouTube iframes).
+   -------------------------- */
+function formatTime(s){
+  if(isNaN(s)) return '0:00';
+  const sec = Math.floor(s % 60).toString().padStart(2,'0');
+  const min = Math.floor(s / 60);
+  return `${min}:${sec}`;
+}
+
+function attachYouTubeControlsToModal(modalId){
+  // Only attach if modal contains an HTML5 <video> element and controls not yet attached
+  const modal = document.getElementById(modalId);
+  if(!modal) return;
+  const vid = modal.querySelector('video');
+  if(!vid) return;
+  if(modal._ytControlsAttached) return;
+  modal._ytControlsAttached = true;
+
+  // hide native controls in favor of our custom UI (native remains fallback before we attach)
+  try{ vid.controls = false; } catch(e){}
+
+  const controls = document.createElement('div');
+  controls.className = 'yt-controls';
+  controls.innerHTML = `
+    <div class="row">
+      <input type="range" class="yt-range" min="0" max="100" value="0" step="0.1" aria-label="Seek slider">
+    </div>
+    <div class="primary">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="yt-play-btn" aria-label="Play/Pause">Play</button>
+        <div class="yt-time" aria-live="off">0:00 / 0:00</div>
+      </div>
+      <div class="right-controls">
+        <input type="range" class="yt-volume" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+        <button class="yt-btn yt-mute" title="Mute">Mute</button>
+        <select class="yt-select yt-rate" title="Playback rate" aria-label="Playback rate">
+          <option value="0.5">0.5×</option>
+          <option value="0.75">0.75×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.25">1.25×</option>
+          <option value="1.5">1.5×</option>
+          <option value="2">2×</option>
+        </select>
+        <button class="yt-btn yt-fullscreen" title="Fullscreen">⤢</button>
+        <button class="yt-btn yt-pip" title="Picture-in-Picture">PIP</button>
+      </div>
+    </div>
+  `;
+  const body = modal.querySelector('.modal-body');
+  if(!body) return;
+  body.appendChild(controls);
+
+  const range = controls.querySelector('.yt-range');
+  const playBtn = controls.querySelector('.yt-play-btn');
+  const timeEl = controls.querySelector('.yt-time');
+  const vol = controls.querySelector('.yt-volume');
+  const muteBtn = controls.querySelector('.yt-mute');
+  const rate = controls.querySelector('.yt-rate');
+  const fsBtn = controls.querySelector('.yt-fullscreen');
+  const pipBtn = controls.querySelector('.yt-pip');
+
+  vid.addEventListener('loadedmetadata', ()=>{
+    range.max = Math.floor(vid.duration);
+    timeEl.textContent = `${formatTime(0)} / ${formatTime(vid.duration)}`;
+  });
+
+  vid.addEventListener('timeupdate', ()=>{
+    range.value = Math.floor(vid.currentTime);
+    timeEl.textContent = `${formatTime(vid.currentTime)} / ${formatTime(vid.duration)}`;
+  });
+
+  function updatePlayButton(){
+    if(vid.paused) playBtn.textContent = 'Play'; else playBtn.textContent = 'Pause';
+  }
+  playBtn.addEventListener('click', ()=>{
+    if(vid.paused){
+      document.querySelectorAll('video').forEach(v=>{ if(v !== vid) v.pause(); });
+      vid.play().catch(()=>{});
+    } else {
+      vid.pause();
+    }
+    updatePlayButton();
+  });
+  vid.addEventListener('play', updatePlayButton);
+  vid.addEventListener('pause', updatePlayButton);
+  vid.addEventListener('ended', ()=>{ updatePlayButton(); });
+
+  let seeking = false;
+  range.addEventListener('input', ()=>{
+    seeking = true;
+    timeEl.textContent = `${formatTime(range.value)} / ${formatTime(vid.duration)}`;
+  });
+  range.addEventListener('change', ()=>{
+    vid.currentTime = Number(range.value);
+    seeking = false;
+  });
+
+  vol.addEventListener('input', ()=>{
+    vid.volume = Number(vol.value);
+    if(vid.volume === 0) muteBtn.textContent = 'Muted'; else muteBtn.textContent = 'Mute';
+  });
+
+  muteBtn.addEventListener('click', ()=>{
+    vid.muted = !vid.muted;
+    muteBtn.textContent = vid.muted ? 'Muted' : 'Mute';
+    vol.value = vid.muted ? 0 : vid.volume;
+  });
+
+  rate.addEventListener('change', ()=>{
+    vid.playbackRate = Number(rate.value);
+  });
+
+  fsBtn.addEventListener('click', async ()=>{
+    const modalCard = modal.querySelector('.modal-card');
+    if(!modalCard) return;
+    if(!document.fullscreenElement){
+      try{ await modalCard.requestFullscreen(); } catch(e){ console.warn(e); }
+    } else {
+      try{ await document.exitFullscreen(); } catch(e){ console.warn(e); }
+    }
+  });
+
+  pipBtn.addEventListener('click', async ()=>{
+    try{
+      if(document.pictureInPictureElement){
+        await document.exitPictureInPicture();
+      } else if(vid.requestPictureInPicture){
+        await vid.requestPictureInPicture();
+      }
+    } catch(err){ console.warn('PIP not available', err); }
+  });
+
+  modal.addEventListener('keydown', (e)=>{
+    if(e.key === ' ' || e.key === 'k'){ e.preventDefault(); if(vid.paused) vid.play(); else vid.pause(); }
+    if(e.key === 'ArrowLeft'){ vid.currentTime = Math.max(0, vid.currentTime - 5); }
+    if(e.key === 'ArrowRight'){ vid.currentTime = Math.min(vid.duration || 0, vid.currentTime + 5); }
+    if(e.key === 'f'){ const modalCard = modal.querySelector('.modal-card'); if(modalCard) modalCard.requestFullscreen().catch(()=>{}); }
+  });
+
+  playBtn.setAttribute('aria-pressed', String(!vid.paused));
+  vid.addEventListener('play', ()=> playBtn.setAttribute('aria-pressed', 'true'));
+  vid.addEventListener('pause', ()=> playBtn.setAttribute('aria-pressed', 'false'));
+}
+
+/* --------------------------
+   Gmail / contact helpers
    -------------------------- */
 const CONTACT_EMAIL = 'ywave.studio@gmail.com';
+function showToast(msg = 'Opening Gmail…', ms = 2000){
+  const toastEl = document.getElementById('toast');
+  if(!toastEl) return;
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  setTimeout(()=> toastEl.classList.remove('show'), ms);
+}
 function openGmailComposeInternal(to, subject = '', body = '') {
   showToast('Opening Gmail…', 2200);
   const encodedSubject = encodeURIComponent(subject || '');
@@ -829,7 +862,10 @@ function handleContactSubmit(e){
   const budget = document.getElementById('contact-budget').value.trim() || 'Discuss';
   const deadline = document.getElementById('contact-deadline').value.trim() || 'Flexible';
   const message = document.getElementById('contact-message').value.trim();
-  if(!name || !email || !message){ alert('Please fill name, email and a short brief.'); return; }
+  if(!name || !email || !message){
+    alert('Please fill name, email and a short brief.');
+    return;
+  }
   const subject = `${project} — Quick brief from ${name}`;
   const body =
 `Hi Y Wave 👋
@@ -850,16 +886,25 @@ Thanks!`;
   setTimeout(()=> openGmailComposeInternal(CONTACT_EMAIL, subject, body), 250);
 }
 
-/* expose a few functions for inline handlers */
+/* --------------------------
+   Initialize some bindings
+   -------------------------- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Attach view-more handlers already wired above; just set initial index placeholders
+  Object.keys(modalPlaylistPaths).forEach(mid=>{
+    const indexEl = document.getElementById(mid + '-index');
+    const arr = modalPlaylistPaths[mid] || [];
+    if(indexEl) indexEl.textContent = (arr.length ? `1 / ${arr.length}` : '0 / 0');
+  });
+});
+
+/* expose functions for inline use (open/close) */
 window.openModal = openModal;
 window.closeModal = closeModal;
 window.handleContactSubmit = handleContactSubmit;
 window.openGmailCompose = openGmailCompose;
 
-/* init */
 document.getElementById('year').textContent = new Date().getFullYear();
-initAssets().catch(e=>{ console.warn('initAssets failed', e); showToast('Some assets could not be loaded', 1800); });
-
 </script>
 </body>
 </html>
